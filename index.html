@@ -4,6 +4,30 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>CyberMind AI // Secure Terminal</title>
+
+  <!-- ══ SECURITY HEADERS ══════════════════════════════════════
+       CSP: hanya izinkan script dari diri sendiri (inline diizinkan karena single-file),
+       style dari googleapis, connect ke API endpoint & fonts saja.
+       Blokir object/embed/frame. -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' 'unsafe-inline';
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src https://fonts.gstatic.com;
+    connect-src https://litellm.koboi2026.biz.id;
+    img-src 'self' data:;
+    object-src 'none';
+    frame-src 'none';
+    base-uri 'self';
+    form-action 'none';
+  "/>
+  <!-- Cegah halaman di-embed di iframe (clickjacking) -->
+  <meta http-equiv="X-Frame-Options" content="DENY"/>
+  <!-- Jangan kirim Referer ke external site -->
+  <meta name="referrer" content="no-referrer"/>
+  <!-- Matikan sniffing MIME type -->
+  <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
+
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet"/>
   <style>
     :root {
@@ -745,7 +769,10 @@
 
   <!-- INPUT ROW -->
   <div class="input-row">
-    <textarea id="userInput" placeholder="Enter command or query..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+      <textarea id="userInput" placeholder="Enter command or query..." onkeydown="handleKey(event)" oninput="autoResize(this);updateCharCount(this)"></textarea>
+      <div id="charCount" style="font-family:var(--font-mono);font-size:9px;color:var(--muted);text-align:right;padding-right:2px;">0 / 4000</div>
+    </div>
     <button class="clear-btn" onclick="clearChat()" title="Clear chat">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
@@ -766,6 +793,15 @@
 <script>
   const API_URL = "https://litellm.koboi2026.biz.id/v1/chat/completions";
   let messages = [];
+
+  // ── Security config ──────────────────────────────────────────
+  const SEC = {
+    MAX_INPUT_CHARS:  4000,   // max chars per user message
+    MAX_HISTORY_MSGS: 50,     // max messages kept in context window
+    RATE_LIMIT_MS:    2000,   // min ms between sends (anti-spam)
+    MAX_SYS_CHARS:    8000,   // max system prompt length
+  };
+  let lastSendTime = 0;
 
   // ── Storage keys ────────────────────────────────────────────
   const LS_DEFAULT  = 'cm_default_persona';
@@ -1045,12 +1081,44 @@
     return id;
   }
 
-  function formatText(text) {
-    text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
-    text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+  function escapeHtmlRaw(str) {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function formatText(raw) {
+    // Extract code blocks first, escape their content, hold as placeholders
+    const codeBlocks = [];
+    let text = raw.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+      const idx = codeBlocks.length;
+      codeBlocks.push(`<pre><code>${escapeHtmlRaw(code)}</code></pre>`);
+      return `\x00CODE${idx}\x00`;
+    });
+
+    // Inline code — escape content
+    const inlineCodes = [];
+    text = text.replace(/`([^`]+)`/g, (_, code) => {
+      const idx = inlineCodes.length;
+      inlineCodes.push(`<code>${escapeHtmlRaw(code)}</code>`);
+      return `\x00INLINE${idx}\x00`;
+    });
+
+    // Escape everything else
+    text = escapeHtmlRaw(text);
+
+    // Apply markdown on safe text
     text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
     text = text.replace(/\n/g, '<br>');
+
+    // Restore placeholders
+    text = text.replace(/\x00CODE(\d+)\x00/g, (_, i) => codeBlocks[i]);
+    text = text.replace(/\x00INLINE(\d+)\x00/g, (_, i) => inlineCodes[i]);
+
     return text;
   }
 
@@ -1069,20 +1137,64 @@
     setTimeout(() => t.style.display = 'none', duration);
   }
 
+  // ── Input validation helpers ─────────────────────────────────
+  function validateApiKey(key) {
+    // Must be non-empty, reasonable length, no whitespace
+    if (!key) return 'API KEY kosong';
+    if (key.length < 8) return 'API KEY terlalu pendek';
+    if (key.length > 512) return 'API KEY terlalu panjang';
+    if (/\s/.test(key)) return 'API KEY tidak boleh mengandung spasi';
+    return null; // valid
+  }
+
+  function sanitizeInput(text) {
+    // Trim, collapse excessive newlines, enforce max length
+    return text.trim().replace(/\n{5,}/g, '\n\n\n').slice(0, SEC.MAX_INPUT_CHARS);
+  }
+
+  function trimHistory() {
+    // Keep only last N messages to prevent context bloat
+    if (messages.length > SEC.MAX_HISTORY_MSGS) {
+      messages = messages.slice(-SEC.MAX_HISTORY_MSGS);
+    }
+  }
+
   async function sendMessage() {
     const input   = document.getElementById('userInput');
     const apiKey  = document.getElementById('apiKey').value.trim();
-    const sysText = document.getElementById('sysInstructions').value.trim();
-    const text    = input.value.trim();
+    const sysRaw  = document.getElementById('sysInstructions').value.trim();
+    const rawText = input.value;
 
+    // ── Rate limiting ──────────────────────────────────────────
+    const now = Date.now();
+    if (now - lastSendTime < SEC.RATE_LIMIT_MS) {
+      showToast(`⏳ Tunggu ${((SEC.RATE_LIMIT_MS - (now - lastSendTime)) / 1000).toFixed(1)}s`);
+      return;
+    }
+
+    // ── Input checks ───────────────────────────────────────────
+    const text = sanitizeInput(rawText);
     if (!text) return;
-    if (!apiKey) { showToast('⚠ API KEY required'); return; }
 
+    const keyErr = validateApiKey(apiKey);
+    if (keyErr) { showToast(`⚠ ${keyErr}`); return; }
+
+    // Warn if message was truncated
+    if (rawText.trim().length > SEC.MAX_INPUT_CHARS) {
+      showToast(`⚠ Pesan dipotong ke ${SEC.MAX_INPUT_CHARS} karakter`, 4000);
+    }
+
+    // ── Truncate system prompt if too long ─────────────────────
+    const sysText = sysRaw.slice(0, SEC.MAX_SYS_CHARS);
+
+    // ── Commit ─────────────────────────────────────────────────
+    lastSendTime = now;
     document.getElementById('sendBtn').disabled = true;
     input.value = '';
     input.style.height = '44px';
 
     messages.push({ role: 'user', content: text });
+    trimHistory();
     renderMessage('user', text);
 
     const botId = renderMessage('bot', '', true);
@@ -1101,7 +1213,8 @@
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
+          'Authorization': `Bearer ${apiKey}`,
+          'X-Requested-With': 'XMLHttpRequest'
         },
         body: JSON.stringify(payload)
       });
@@ -1135,13 +1248,16 @@
       messages.push({ role: 'assistant', content: full });
 
     } catch (err) {
-      updateMessage(botId, `⚠ ERROR: ${err.message}`);
+      // Don't expose raw error details that could leak info
+      const safeMsg = err.message.length > 200 ? err.message.slice(0, 200) + '…' : err.message;
+      updateMessage(botId, `⚠ ERROR: ${escapeHtmlRaw(safeMsg)}`);
       messages.pop();
     }
 
     document.getElementById('sendBtn').disabled = false;
     input.focus();
   }
+
 
   function clearChat() {
     messages = [];
@@ -1158,6 +1274,14 @@
       e.preventDefault();
       sendMessage();
     }
+  }
+
+  function updateCharCount(el) {
+    const len = el.value.length;
+    const max = SEC.MAX_INPUT_CHARS;
+    const el2 = document.getElementById('charCount');
+    el2.textContent = `${len} / ${max}`;
+    el2.style.color = len > max * 0.9 ? '#ff6060' : len > max * 0.7 ? '#ffaa00' : 'var(--muted)';
   }
 
   function autoResize(el) {
