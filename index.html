@@ -195,10 +195,13 @@
     #sysPanel {
       display: none;
       flex-direction: column;
-      gap: 6px;
-      padding: 10px 0;
+      gap: 0;
       border-bottom: 1px solid var(--border);
       animation: slideDown 0.2s ease;
+      max-height: 420px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--dim) transparent;
     }
     #sysPanel.open { display: flex; }
 
@@ -207,47 +210,165 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    .sys-header {
+    .sys-section {
+      border-bottom: 1px solid #0a2030;
+      padding: 8px 0;
+    }
+    .sys-section:last-child { border-bottom: none; }
+
+    .sys-section-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .sys-label {
       font-family: var(--font-mono);
       font-size: 10px;
       color: var(--accent);
       letter-spacing: 0.15em;
-      display: flex;
-      align-items: center;
-      gap: 8px;
     }
-    .sys-header::before {
-      content: '//';
-      color: var(--accent2);
+    .sys-label::before { content: '// '; color: var(--accent2); }
+
+    /* DEFAULT PERSONA */
+    .default-persona-box {
+      background: #040d13;
+      border: 1px solid #0a2535;
+      border-left: 3px solid var(--dim);
+      border-radius: 0 3px 3px 0;
+      padding: 8px 12px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #5aa8b8;
+      line-height: 1.5;
+      max-height: 70px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      position: relative;
+    }
+    .default-persona-box:hover { border-left-color: var(--accent); }
+    .default-persona-box.active-persona {
+      border-left-color: var(--accent);
+      color: var(--text);
+      box-shadow: inset 0 0 12px rgba(0,255,231,0.04);
+    }
+    .default-persona-box.empty-default {
+      color: var(--muted);
+      font-style: italic;
     }
 
+    .upload-btn {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--accent);
+      background: rgba(0,255,231,0.06);
+      border: 1px solid var(--dim);
+      padding: 4px 10px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .upload-btn:hover {
+      background: rgba(0,255,231,0.14);
+      border-color: var(--accent);
+    }
+
+    /* ACTIVE EDITOR */
     #sysInstructions {
       width: 100%;
-      height: 90px;
+      height: 80px;
       resize: vertical;
       font-size: 12px;
       line-height: 1.5;
     }
 
-    .sys-presets {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
+    .active-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--muted);
+      margin-bottom: 4px;
     }
-    .preset-btn {
+    .active-label span {
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    /* PERSONA LIST */
+    .persona-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      min-height: 26px;
+    }
+
+    .persona-chip {
+      display: flex;
+      align-items: center;
+      gap: 4px;
       font-family: var(--font-mono);
       font-size: 10px;
       color: var(--muted);
       background: transparent;
       border: 1px solid #0d2530;
-      padding: 4px 8px;
+      padding: 3px 8px 3px 10px;
       border-radius: 2px;
       cursor: pointer;
       transition: all 0.15s;
     }
-    .preset-btn:hover {
+    .persona-chip:hover, .persona-chip.active-chip {
       color: var(--accent);
       border-color: var(--dim);
+      background: rgba(0,255,231,0.05);
+    }
+    .persona-chip.active-chip {
+      border-color: var(--accent);
+      box-shadow: 0 0 6px rgba(0,255,231,0.15);
+    }
+    .chip-del {
+      color: #2a5060;
+      font-size: 12px;
+      line-height: 1;
+      padding: 0 2px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .chip-del:hover { color: var(--accent2); }
+
+    /* ADD PERSONA FORM */
+    .add-persona-row {
+      display: flex;
+      gap: 6px;
+      align-items: stretch;
+      margin-top: 6px;
+    }
+    #newPersonaName {
+      width: 140px;
+      flex-shrink: 0;
+    }
+    .save-persona-btn {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--accent);
+      background: rgba(0,255,231,0.06);
+      border: 1px solid var(--dim);
+      padding: 5px 12px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .save-persona-btn:hover {
+      background: rgba(0,255,231,0.14);
+      border-color: var(--accent);
+      box-shadow: var(--glow);
     }
 
     /* ─── CHAT AREA ──────────────────────────── */
@@ -538,12 +659,13 @@
 
     <span class="cfg-label">MODEL:</span>
     <select id="model">
+      <option value="vertex_ai/deepseek-ai/deepseek-v3.2-maas" selected>deepseek-v3.2 (vertex)</option>
+      <option value="gpt-5-mini">gpt-5-mini</option>
+      <option value="gpt-5">gpt-5</option>
       <option value="gpt-4o-mini">gpt-4o-mini</option>
       <option value="gpt-4o">gpt-4o</option>
       <option value="gpt-4.1-mini">gpt-4.1-mini</option>
       <option value="gpt-4.1">gpt-4.1</option>
-      <option value="gpt-5-mini" selected>gpt-5-mini</option>
-      <option value="gpt-5">gpt-5</option>
       <option value="claude-sonnet-4-5">claude-sonnet-4-5</option>
       <option value="claude-opus-4-5">claude-opus-4-5</option>
       <option value="gemini-2.0-flash">gemini-2.0-flash</option>
@@ -557,19 +679,48 @@
 
   <!-- SYSTEM INSTRUCTIONS PANEL -->
   <div id="sysPanel">
-    <div class="sys-header">SYSTEM INSTRUCTIONS</div>
-    <textarea id="sysInstructions" placeholder="Define the AI behavior, persona, and constraints here...
-Example: You are a cybersecurity expert. Answer only security-related questions with technical precision."></textarea>
-    <div class="sys-presets">
-      <span class="cfg-label" style="align-self:center">PRESETS:</span>
-      <button class="preset-btn" onclick="applyPreset('pentest')">⚔ Pentest Advisor</button>
-      <button class="preset-btn" onclick="applyPreset('soc')">🛡 SOC Analyst</button>
-      <button class="preset-btn" onclick="applyPreset('malware')">🦠 Malware Analyst</button>
-      <button class="preset-btn" onclick="applyPreset('ctf')">🚩 CTF Helper</button>
-      <button class="preset-btn" onclick="applyPreset('opsec')">🔒 OPSEC Guide</button>
-      <button class="preset-btn" onclick="applyPreset('clear')">✕ Clear</button>
+
+    <!-- SECTION 1: DEFAULT PERSONA -->
+    <div class="sys-section">
+      <div class="sys-section-hdr">
+        <span class="sys-label">PERSONA DEFAULT</span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span id="defaultPersonaStatus" style="font-family:var(--font-mono);font-size:9px;color:var(--muted)">NO FILE LOADED</span>
+          <label class="upload-btn" for="fileUpload">⬆ UPLOAD .TXT</label>
+          <input type="file" id="fileUpload" accept=".txt" style="display:none" onchange="loadDefaultPersona(event)"/>
+          <button class="upload-btn" onclick="clearDefaultPersona()" style="color:#ff6070;border-color:#2a1020;" title="Remove default persona">✕</button>
+        </div>
+      </div>
+      <div class="default-persona-box empty-default" id="defaultPersonaBox" onclick="activatePersona('__default__')"
+           title="Click to use as active system prompt">
+        Upload a .txt file to set your Default Persona — it will auto-load every session.
+      </div>
     </div>
+
+    <!-- SECTION 2: ACTIVE SYSTEM PROMPT EDITOR -->
+    <div class="sys-section">
+      <div class="active-label">ACTIVE PROMPT — <span id="activePersonaName">none</span></div>
+      <textarea id="sysInstructions" placeholder="Select a persona above, or type a custom system instruction here..."></textarea>
+    </div>
+
+    <!-- SECTION 3: SAVED PERSONAS -->
+    <div class="sys-section">
+      <div class="sys-section-hdr">
+        <span class="sys-label">SAVED PERSONAS</span>
+      </div>
+      <div class="persona-list" id="personaList">
+        <!-- chips rendered by JS -->
+      </div>
+      <!-- ADD NEW -->
+      <div class="add-persona-row">
+        <input type="text" id="newPersonaName" placeholder="persona name..." maxlength="32"/>
+        <button class="save-persona-btn" onclick="saveCurrentPersona()">💾 SAVE CURRENT PROMPT</button>
+      </div>
+    </div>
+
   </div>
+
+
 
   <!-- CHAT AREA -->
   <div id="chatWrap">
@@ -604,7 +755,33 @@ Example: You are a cybersecurity expert. Answer only security-related questions 
   const API_URL = "https://litellm.koboi2026.biz.id/v1/chat/completions";
   let messages = [];
 
-  // ── clock ──────────────────────────────────────────────────
+  // ── Storage keys ────────────────────────────────────────────
+  const LS_DEFAULT  = 'cm_default_persona';
+  const LS_PERSONAS = 'cm_personas';
+  const LS_APIKEY   = 'cm_apikey';
+
+  // ── State ───────────────────────────────────────────────────
+  let defaultPersonaContent = '';
+  let activePersonaKey = null; // '__default__' | name | null
+
+  // ── Init ────────────────────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', () => {
+    // restore API key
+    const saved = localStorage.getItem(LS_APIKEY);
+    if (saved) document.getElementById('apiKey').value = saved;
+    document.getElementById('apiKey').addEventListener('input', function() {
+      localStorage.setItem(LS_APIKEY, this.value);
+    });
+
+    // restore default persona
+    const dp = localStorage.getItem(LS_DEFAULT);
+    if (dp) setDefaultPersona(dp, 'SAVED FILE');
+
+    // render persona chips
+    renderPersonaList();
+  });
+
+  // ── Clock ───────────────────────────────────────────────────
   function updateClock() {
     const now = new Date();
     document.getElementById('clock').textContent =
@@ -612,22 +789,21 @@ Example: You are a cybersecurity expert. Answer only security-related questions 
   }
   updateClock(); setInterval(updateClock, 1000);
 
-  // ── model select ────────────────────────────────────────────
+  // ── Model ───────────────────────────────────────────────────
   document.getElementById('model').addEventListener('change', function() {
-    const custom = document.getElementById('customModel');
-    custom.style.display = this.value === 'custom' ? 'inline-block' : 'none';
+    document.getElementById('customModel').style.display =
+      this.value === 'custom' ? 'inline-block' : 'none';
   });
 
   function getModel() {
     const sel = document.getElementById('model').value;
     if (sel === 'custom') {
-      const v = document.getElementById('customModel').value.trim();
-      return v || 'gpt-5-mini';
+      return document.getElementById('customModel').value.trim() || 'vertex_ai/deepseek-ai/deepseek-v3.2-maas';
     }
     return sel;
   }
 
-  // ── system panel ────────────────────────────────────────────
+  // ── System Panel toggle ─────────────────────────────────────
   function toggleSysPanel() {
     const panel = document.getElementById('sysPanel');
     const btn   = document.getElementById('toggleSys');
@@ -635,20 +811,190 @@ Example: You are a cybersecurity expert. Answer only security-related questions 
     btn.classList.toggle('active');
   }
 
-  const PRESETS = {
-    pentest: `You are an elite penetration tester and red team specialist with 15+ years of experience. Provide precise, technical guidance on offensive security techniques, vulnerability assessment, and ethical hacking methodologies. Always note legal and ethical considerations.`,
-    soc: `You are a Senior SOC (Security Operations Center) Analyst. Assist with threat detection, incident response, log analysis, SIEM queries, and defensive security measures. Provide concise, actionable intelligence using industry-standard frameworks like MITRE ATT&CK.`,
-    malware: `You are a malware analyst and reverse engineer. Help analyze suspicious code, binaries, and indicators of compromise. Explain malware behavior, persistence mechanisms, and C2 communication patterns. Use technical terminology and reference CVEs where relevant.`,
-    ctf: `You are an expert CTF (Capture The Flag) coach specializing in all categories: web exploitation, pwn, crypto, forensics, reverse engineering, and OSINT. Guide the user through challenges step-by-step using hints before full solutions.`,
-    opsec: `You are an operational security (OPSEC) specialist. Provide guidance on anonymity, privacy, threat modeling, secure communications, and digital footprint reduction. Assume the user has legitimate privacy concerns.`,
-    clear: ''
-  };
-
-  function applyPreset(key) {
-    document.getElementById('sysInstructions').value = key === 'clear' ? '' : PRESETS[key];
+  // ── Default Persona (file upload) ───────────────────────────
+  function loadDefaultPersona(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const content = e.target.result.trim();
+      setDefaultPersona(content, file.name);
+      localStorage.setItem(LS_DEFAULT, content);
+      showToast(`✔ Default persona loaded: ${file.name}`);
+    };
+    reader.readAsText(file);
+    // reset input so same file can be re-uploaded
+    event.target.value = '';
   }
 
-  // ── chat ────────────────────────────────────────────────────
+  function setDefaultPersona(content, label) {
+    defaultPersonaContent = content;
+    const box = document.getElementById('defaultPersonaBox');
+    const status = document.getElementById('defaultPersonaStatus');
+    box.textContent = content;
+    box.classList.remove('empty-default');
+    status.textContent = label || 'LOADED';
+    status.style.color = '#00ff88';
+    // auto-activate if nothing else is active
+    if (!activePersonaKey) activatePersona('__default__');
+    else renderPersonaList(); // refresh chips
+  }
+
+  function clearDefaultPersona() {
+    defaultPersonaContent = '';
+    localStorage.removeItem(LS_DEFAULT);
+    const box = document.getElementById('defaultPersonaBox');
+    const status = document.getElementById('defaultPersonaStatus');
+    box.textContent = 'Upload a .txt file to set your Default Persona — it will auto-load every session.';
+    box.classList.add('empty-default');
+    status.textContent = 'NO FILE LOADED';
+    status.style.color = '';
+    if (activePersonaKey === '__default__') {
+      activePersonaKey = null;
+      document.getElementById('activePersonaName').textContent = 'none';
+      document.getElementById('sysInstructions').value = '';
+    }
+    renderPersonaList();
+    showToast('Default persona cleared');
+  }
+
+  // ── Activate a persona ──────────────────────────────────────
+  function activatePersona(key) {
+    let content = '';
+    if (key === '__default__') {
+      if (!defaultPersonaContent) return;
+      content = defaultPersonaContent;
+      document.getElementById('activePersonaName').textContent = 'DEFAULT';
+    } else {
+      const personas = getPersonas();
+      const p = personas.find(x => x.name === key);
+      if (!p) return;
+      content = p.content;
+      document.getElementById('activePersonaName').textContent = key.toUpperCase();
+    }
+    activePersonaKey = key;
+    document.getElementById('sysInstructions').value = content;
+
+    // update default box highlight
+    const box = document.getElementById('defaultPersonaBox');
+    box.classList.toggle('active-persona', key === '__default__');
+
+    renderPersonaList();
+  }
+
+  // ── Saved Personas (localStorage) ───────────────────────────
+  function getPersonas() {
+    try { return JSON.parse(localStorage.getItem(LS_PERSONAS) || '[]'); }
+    catch { return []; }
+  }
+
+  function savePersonas(arr) {
+    localStorage.setItem(LS_PERSONAS, JSON.stringify(arr));
+  }
+
+  function saveCurrentPersona() {
+    const name = document.getElementById('newPersonaName').value.trim();
+    const content = document.getElementById('sysInstructions').value.trim();
+    if (!name) { showToast('⚠ Enter a persona name first'); return; }
+    if (!content) { showToast('⚠ Active prompt is empty'); return; }
+
+    const personas = getPersonas();
+    const existing = personas.findIndex(p => p.name === name);
+    if (existing >= 0) {
+      personas[existing].content = content;
+      showToast(`✔ Updated: ${name}`);
+    } else {
+      personas.push({ name, content });
+      showToast(`✔ Saved: ${name}`);
+    }
+    savePersonas(personas);
+    document.getElementById('newPersonaName').value = '';
+    activePersonaKey = name;
+    document.getElementById('activePersonaName').textContent = name.toUpperCase();
+    renderPersonaList();
+  }
+
+  function deletePersona(name) {
+    const personas = getPersonas().filter(p => p.name !== name);
+    savePersonas(personas);
+    if (activePersonaKey === name) {
+      activePersonaKey = null;
+      document.getElementById('activePersonaName').textContent = 'none';
+      document.getElementById('sysInstructions').value = '';
+    }
+    renderPersonaList();
+  }
+
+  function renderPersonaList() {
+    const list = document.getElementById('personaList');
+    const personas = getPersonas();
+
+    // Built-in presets
+    const BUILTIN = [
+      { name: '⚔ Pentest',  key: 'pentest' },
+      { name: '🛡 SOC',     key: 'soc'     },
+      { name: '🦠 Malware', key: 'malware' },
+      { name: '🚩 CTF',     key: 'ctf'     },
+      { name: '🔒 OPSEC',   key: 'opsec'   },
+    ];
+
+    list.innerHTML = '';
+
+    // Built-in chips
+    BUILTIN.forEach(b => {
+      const chip = document.createElement('button');
+      chip.className = 'persona-chip' + (activePersonaKey === b.key ? ' active-chip' : '');
+      chip.textContent = b.name;
+      chip.onclick = () => activateBuiltin(b.key, b.name);
+      list.appendChild(chip);
+    });
+
+    // Saved custom chips
+    personas.forEach(p => {
+      const chip = document.createElement('div');
+      chip.className = 'persona-chip' + (activePersonaKey === p.name ? ' active-chip' : '');
+      chip.innerHTML = `<span onclick="activatePersona('${escHtml(p.name)}')" style="cursor:pointer">${escHtml(p.name)}</span>
+        <button class="chip-del" onclick="deletePersona('${escHtml(p.name)}')" title="Delete">✕</button>`;
+      list.appendChild(chip);
+    });
+
+    // Clear chip
+    const clr = document.createElement('button');
+    clr.className = 'persona-chip';
+    clr.style.color = '#ff6070';
+    clr.textContent = '✕ clear';
+    clr.onclick = () => {
+      activePersonaKey = null;
+      document.getElementById('sysInstructions').value = '';
+      document.getElementById('activePersonaName').textContent = 'none';
+      document.getElementById('defaultPersonaBox').classList.remove('active-persona');
+      renderPersonaList();
+    };
+    list.appendChild(clr);
+  }
+
+  // Built-in preset content
+  const BUILTIN_CONTENT = {
+    pentest: `You are an elite penetration tester and red team specialist with 15+ years of experience. Provide precise, technical guidance on offensive security techniques, vulnerability assessment, and ethical hacking methodologies. Always note legal and ethical considerations.`,
+    soc:     `You are a Senior SOC (Security Operations Center) Analyst. Assist with threat detection, incident response, log analysis, SIEM queries, and defensive security measures. Provide concise, actionable intelligence using industry-standard frameworks like MITRE ATT&CK.`,
+    malware: `You are a malware analyst and reverse engineer. Help analyze suspicious code, binaries, and indicators of compromise. Explain malware behavior, persistence mechanisms, and C2 communication patterns. Use technical terminology and reference CVEs where relevant.`,
+    ctf:     `You are an expert CTF (Capture The Flag) coach specializing in all categories: web exploitation, pwn, crypto, forensics, reverse engineering, and OSINT. Guide the user through challenges step-by-step using hints before full solutions.`,
+    opsec:   `You are an operational security (OPSEC) specialist. Provide guidance on anonymity, privacy, threat modeling, secure communications, and digital footprint reduction. Assume the user has legitimate privacy concerns.`,
+  };
+
+  function activateBuiltin(key, label) {
+    activePersonaKey = key;
+    document.getElementById('sysInstructions').value = BUILTIN_CONTENT[key];
+    document.getElementById('activePersonaName').textContent = label.replace(/^[^\s]+\s/, '').toUpperCase();
+    document.getElementById('defaultPersonaBox').classList.remove('active-persona');
+    renderPersonaList();
+  }
+
+  function escHtml(str) {
+    return str.replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+
+  // ── Chat ─────────────────────────────────────────────────────
   function getTimestamp() {
     return new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   }
@@ -688,15 +1034,10 @@ Example: You are a cybersecurity expert. Answer only security-related questions 
   }
 
   function formatText(text) {
-    // code blocks
     text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
-    // inline code
     text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
-    // bold
     text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    // italic
     text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    // newlines
     text = text.replace(/\n/g, '<br>');
     return text;
   }
@@ -725,19 +1066,15 @@ Example: You are a cybersecurity expert. Answer only security-related questions 
     if (!text) return;
     if (!apiKey) { showToast('⚠ API KEY required'); return; }
 
-    // disable input
     document.getElementById('sendBtn').disabled = true;
     input.value = '';
     input.style.height = '44px';
 
-    // push user message
     messages.push({ role: 'user', content: text });
     renderMessage('user', text);
 
-    // placeholder for bot
     const botId = renderMessage('bot', '', true);
 
-    // build payload
     const payload = {
       model: getModel(),
       messages: [
@@ -787,7 +1124,6 @@ Example: You are a cybersecurity expert. Answer only security-related questions 
 
     } catch (err) {
       updateMessage(botId, `⚠ ERROR: ${err.message}`);
-      // remove last user message from history on error
       messages.pop();
     }
 
@@ -797,8 +1133,7 @@ Example: You are a cybersecurity expert. Answer only security-related questions 
 
   function clearChat() {
     messages = [];
-    const wrap = document.getElementById('chatWrap');
-    wrap.innerHTML = `
+    document.getElementById('chatWrap').innerHTML = `
       <div id="emptyState">
         <div class="big-icon">⬡</div>
         <div class="big-label">TERMINAL READY</div>
