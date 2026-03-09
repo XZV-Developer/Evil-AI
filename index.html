@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CyberMind AI // Secure Terminal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:        #030a0e;
+      --panel:     #050f14;
+      --border:    #0d3040;
+      --accent:    #00ffe7;
+      --accent2:   #ff003c;
+      --dim:       #0a5060;
+      --text:      #c8f0f8;
+      --muted:     #3d7a8a;
+      --user-bg:   #051820;
+      --bot-bg:    #030f14;
+      --glow:      0 0 12px #00ffe780;
+      --font-mono: 'Share Tech Mono', monospace;
+      --font-head: 'Orbitron', sans-serif;
+      --font-body: 'Rajdhani', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      overflow: hidden;
+    }
+
+    /* scanline overlay */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,255,231,0.015) 2px,
+        rgba(0,255,231,0.015) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* corner grid bg */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,255,231,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,231,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #app {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 12px;
+    }
+
+    /* ─── HEADER ─────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 38px; height: 38px;
+      position: relative;
+    }
+    .logo-icon svg { width: 100%; height: 100%; }
+
+    .logo-text {
+      font-family: var(--font-head);
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      color: var(--accent);
+      text-shadow: var(--glow);
+    }
+    .logo-text span { color: var(--accent2); }
+
+    .logo-sub {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.2em;
+      margin-top: 2px;
+    }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #00ff88;
+      box-shadow: 0 0 6px #00ff88;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ─── CONFIG ROW ─────────────────────────── */
+    .config-row {
+      display: flex;
+      gap: 8px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .cfg-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      white-space: nowrap;
+    }
+
+    input[type="text"], input[type="password"], select, textarea {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 3px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input[type="text"]:focus,
+    input[type="password"]:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px rgba(0,255,231,0.2);
+    }
+    select option { background: #0a1a22; }
+
+    #apiKey  { flex: 1; min-width: 140px; }
+    #model   { min-width: 160px; }
+
+    .btn-sys {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--accent);
+      background: transparent;
+      border: 1px solid var(--dim);
+      padding: 6px 12px;
+      border-radius: 3px;
+      cursor: pointer;
+      letter-spacing: 0.08em;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .btn-sys:hover, .btn-sys.active {
+      background: rgba(0,255,231,0.1);
+      border-color: var(--accent);
+      box-shadow: var(--glow);
+    }
+
+    /* ─── SYSTEM INSTRUCTIONS PANEL ─────────── */
+    #sysPanel {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      animation: slideDown 0.2s ease;
+    }
+    #sysPanel.open { display: flex; }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .sys-header {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--accent);
+      letter-spacing: 0.15em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sys-header::before {
+      content: '//';
+      color: var(--accent2);
+    }
+
+    #sysInstructions {
+      width: 100%;
+      height: 90px;
+      resize: vertical;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .sys-presets {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .preset-btn {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid #0d2530;
+      padding: 4px 8px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .preset-btn:hover {
+      color: var(--accent);
+      border-color: var(--dim);
+    }
+
+    /* ─── CHAT AREA ──────────────────────────── */
+    #chatWrap {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--dim) transparent;
+    }
+    #chatWrap::-webkit-scrollbar { width: 4px; }
+    #chatWrap::-webkit-scrollbar-track { background: transparent; }
+    #chatWrap::-webkit-scrollbar-thumb { background: var(--dim); border-radius: 2px; }
+
+    .msg {
+      display: flex;
+      gap: 12px;
+      animation: msgIn 0.2s ease;
+    }
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg-avatar {
+      width: 32px; height: 32px;
+      border-radius: 3px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-head);
+      font-size: 11px;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .msg.user .msg-avatar {
+      background: #0d2030;
+      border: 1px solid #1a4060;
+      color: var(--accent);
+    }
+    .msg.bot .msg-avatar {
+      background: #0a0f18;
+      border: 1px solid var(--dim);
+      color: var(--accent2);
+    }
+
+    .msg-body { flex: 1; min-width: 0; }
+
+    .msg-meta {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+    .msg-name {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+    }
+    .msg.user .msg-name { color: var(--accent); }
+    .msg.bot  .msg-name { color: var(--accent2); }
+
+    .msg-time {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--muted);
+    }
+
+    .msg-text {
+      background: var(--bot-bg);
+      border: 1px solid var(--border);
+      border-left: 3px solid;
+      padding: 10px 14px;
+      border-radius: 0 4px 4px 0;
+      line-height: 1.65;
+      font-size: 14px;
+      font-family: var(--font-body);
+      font-weight: 400;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .msg.user .msg-text {
+      background: var(--user-bg);
+      border-left-color: var(--accent);
+    }
+    .msg.bot .msg-text {
+      border-left-color: var(--accent2);
+    }
+
+    /* code blocks inside messages */
+    .msg-text code {
+      font-family: var(--font-mono);
+      background: #071420;
+      border: 1px solid var(--border);
+      padding: 0 5px;
+      border-radius: 2px;
+      font-size: 12px;
+      color: var(--accent);
+    }
+    .msg-text pre {
+      background: #050d14;
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--dim);
+      padding: 10px 12px;
+      margin: 8px 0;
+      border-radius: 0 3px 3px 0;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: #7be8d8;
+    }
+
+    /* thinking/loading */
+    .thinking-dots span {
+      animation: blink 1.2s infinite;
+      color: var(--accent);
+      font-family: var(--font-mono);
+      font-size: 20px;
+    }
+    .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink {
+      0%,80%,100% { opacity: 0; }
+      40% { opacity: 1; }
+    }
+
+    /* empty state */
+    #emptyState {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      opacity: 0.5;
+      text-align: center;
+      pointer-events: none;
+      user-select: none;
+    }
+    #emptyState .big-icon {
+      font-size: 48px;
+      filter: drop-shadow(var(--glow));
+    }
+    #emptyState .big-label {
+      font-family: var(--font-head);
+      font-size: 16px;
+      letter-spacing: 0.25em;
+      color: var(--accent);
+    }
+    #emptyState .big-sub {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* ─── INPUT ROW ──────────────────────────── */
+    .input-row {
+      display: flex;
+      gap: 8px;
+      padding: 12px 0 14px;
+      border-top: 1px solid var(--border);
+      align-items: flex-end;
+    }
+
+    #userInput {
+      flex: 1;
+      resize: none;
+      height: 44px;
+      max-height: 140px;
+      overflow-y: auto;
+      font-family: var(--font-body);
+      font-size: 14px;
+      line-height: 1.5;
+      padding: 10px 12px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--dim) transparent;
+    }
+    #userInput::placeholder { color: var(--muted); }
+
+    .send-btn {
+      height: 44px;
+      width: 54px;
+      background: linear-gradient(135deg, #00ffe720, #00ffe730);
+      border: 1px solid var(--accent);
+      border-radius: 3px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .send-btn:hover {
+      background: rgba(0,255,231,0.2);
+      box-shadow: var(--glow);
+    }
+    .send-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .send-btn svg { color: var(--accent); }
+
+    .clear-btn {
+      height: 44px;
+      width: 44px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+      color: var(--muted);
+    }
+    .clear-btn:hover {
+      border-color: var(--accent2);
+      color: var(--accent2);
+    }
+
+    /* ─── FOOTER ─────────────────────────────── */
+    .footer {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: #1a4050;
+      text-align: center;
+      padding: 4px 0 8px;
+      letter-spacing: 0.1em;
+    }
+
+    /* ─── NOTIFICATION ───────────────────────── */
+    #toast {
+      position: fixed;
+      top: 16px; right: 16px;
+      background: #0d1f2a;
+      border: 1px solid var(--accent2);
+      color: var(--accent2);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 8px 16px;
+      border-radius: 3px;
+      z-index: 99999;
+      display: none;
+      animation: fadeIn 0.2s;
+    }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
+
+    @media (max-width: 600px) {
+      .logo-text { font-size: 14px; }
+      .status-bar .hide-sm { display: none; }
+      #model { min-width: 120px; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="19,2 36,10 36,28 19,36 2,28 2,10" stroke="#00ffe7" stroke-width="1.5" fill="none" opacity="0.6"/>
+          <polygon points="19,7 31,13 31,25 19,31 7,25 7,13" stroke="#00ffe7" stroke-width="1" fill="none" opacity="0.3"/>
+          <circle cx="19" cy="19" r="5" fill="#00ffe7" opacity="0.9"/>
+          <circle cx="19" cy="19" r="8" stroke="#00ffe7" stroke-width="0.5" fill="none" opacity="0.4"/>
+          <line x1="19" y1="2" x2="19" y2="7" stroke="#ff003c" stroke-width="1.5"/>
+          <line x1="36" y1="10" x2="31" y2="13" stroke="#ff003c" stroke-width="1.5"/>
+          <line x1="36" y1="28" x2="31" y2="25" stroke="#ff003c" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-text">CYBER<span>MIND</span></div>
+        <div class="logo-sub">SECURE AI TERMINAL v2.4.1</div>
+      </div>
+    </div>
+    <div class="status-bar">
+      <div class="status-dot"></div>
+      <span class="hide-sm">CONN: ENCRYPTED</span>
+      <span id="clock">--:--:--</span>
+    </div>
+  </header>
+
+  <!-- CONFIG ROW -->
+  <div class="config-row">
+    <span class="cfg-label">API_KEY:</span>
+    <input type="password" id="apiKey" placeholder="sk-••••••••••••••••" />
+
+    <span class="cfg-label">MODEL:</span>
+    <select id="model">
+      <option value="gpt-4o-mini">gpt-4o-mini</option>
+      <option value="gpt-4o">gpt-4o</option>
+      <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+      <option value="gpt-4.1">gpt-4.1</option>
+      <option value="gpt-5-mini" selected>gpt-5-mini</option>
+      <option value="gpt-5">gpt-5</option>
+      <option value="claude-sonnet-4-5">claude-sonnet-4-5</option>
+      <option value="claude-opus-4-5">claude-opus-4-5</option>
+      <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+      <option value="custom">[ custom... ]</option>
+    </select>
+
+    <input type="text" id="customModel" placeholder="model name" style="display:none; width:150px;"/>
+
+    <button class="btn-sys" id="toggleSys" onclick="toggleSysPanel()">⚙ SYSTEM PROMPT</button>
+  </div>
+
+  <!-- SYSTEM INSTRUCTIONS PANEL -->
+  <div id="sysPanel">
+    <div class="sys-header">SYSTEM INSTRUCTIONS</div>
+    <textarea id="sysInstructions" placeholder="Define the AI behavior, persona, and constraints here...
+Example: You are a cybersecurity expert. Answer only security-related questions with technical precision."></textarea>
+    <div class="sys-presets">
+      <span class="cfg-label" style="align-self:center">PRESETS:</span>
+      <button class="preset-btn" onclick="applyPreset('pentest')">⚔ Pentest Advisor</button>
+      <button class="preset-btn" onclick="applyPreset('soc')">🛡 SOC Analyst</button>
+      <button class="preset-btn" onclick="applyPreset('malware')">🦠 Malware Analyst</button>
+      <button class="preset-btn" onclick="applyPreset('ctf')">🚩 CTF Helper</button>
+      <button class="preset-btn" onclick="applyPreset('opsec')">🔒 OPSEC Guide</button>
+      <button class="preset-btn" onclick="applyPreset('clear')">✕ Clear</button>
+    </div>
+  </div>
+
+  <!-- CHAT AREA -->
+  <div id="chatWrap">
+    <div id="emptyState">
+      <div class="big-icon">⬡</div>
+      <div class="big-label">TERMINAL READY</div>
+      <div class="big-sub">// Initialize query sequence to begin</div>
+    </div>
+  </div>
+
+  <!-- INPUT ROW -->
+  <div class="input-row">
+    <textarea id="userInput" placeholder="Enter command or query..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button class="clear-btn" onclick="clearChat()" title="Clear chat">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
+      </svg>
+    </button>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="Send (Enter)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="footer">[ CYBERMIND AI // TRAFFIC ENCRYPTED // POWERED BY LITELLM ]</div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const API_URL = "https://litellm.koboi2026.biz.id/v1/chat/completions";
+  let messages = [];
+
+  // ── clock ──────────────────────────────────────────────────
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('clock').textContent =
+      now.toTimeString().split(' ')[0];
+  }
+  updateClock(); setInterval(updateClock, 1000);
+
+  // ── model select ────────────────────────────────────────────
+  document.getElementById('model').addEventListener('change', function() {
+    const custom = document.getElementById('customModel');
+    custom.style.display = this.value === 'custom' ? 'inline-block' : 'none';
+  });
+
+  function getModel() {
+    const sel = document.getElementById('model').value;
+    if (sel === 'custom') {
+      const v = document.getElementById('customModel').value.trim();
+      return v || 'gpt-5-mini';
+    }
+    return sel;
+  }
+
+  // ── system panel ────────────────────────────────────────────
+  function toggleSysPanel() {
+    const panel = document.getElementById('sysPanel');
+    const btn   = document.getElementById('toggleSys');
+    panel.classList.toggle('open');
+    btn.classList.toggle('active');
+  }
+
+  const PRESETS = {
+    pentest: `You are an elite penetration tester and red team specialist with 15+ years of experience. Provide precise, technical guidance on offensive security techniques, vulnerability assessment, and ethical hacking methodologies. Always note legal and ethical considerations.`,
+    soc: `You are a Senior SOC (Security Operations Center) Analyst. Assist with threat detection, incident response, log analysis, SIEM queries, and defensive security measures. Provide concise, actionable intelligence using industry-standard frameworks like MITRE ATT&CK.`,
+    malware: `You are a malware analyst and reverse engineer. Help analyze suspicious code, binaries, and indicators of compromise. Explain malware behavior, persistence mechanisms, and C2 communication patterns. Use technical terminology and reference CVEs where relevant.`,
+    ctf: `You are an expert CTF (Capture The Flag) coach specializing in all categories: web exploitation, pwn, crypto, forensics, reverse engineering, and OSINT. Guide the user through challenges step-by-step using hints before full solutions.`,
+    opsec: `You are an operational security (OPSEC) specialist. Provide guidance on anonymity, privacy, threat modeling, secure communications, and digital footprint reduction. Assume the user has legitimate privacy concerns.`,
+    clear: ''
+  };
+
+  function applyPreset(key) {
+    document.getElementById('sysInstructions').value = key === 'clear' ? '' : PRESETS[key];
+  }
+
+  // ── chat ────────────────────────────────────────────────────
+  function getTimestamp() {
+    return new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  function renderMessage(role, text, isThinking = false) {
+    const wrap = document.getElementById('chatWrap');
+    const empty = document.getElementById('emptyState');
+    if (empty) empty.remove();
+
+    const id = 'msg-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+    const isUser = role === 'user';
+
+    const div = document.createElement('div');
+    div.className = `msg ${isUser ? 'user' : 'bot'}`;
+    div.id = id;
+
+    const avatar = isUser ? 'YOU' : 'AI';
+    const name   = isUser ? 'OPERATOR' : 'CYBERMIND';
+
+    div.innerHTML = `
+      <div class="msg-avatar">${avatar}</div>
+      <div class="msg-body">
+        <div class="msg-meta">
+          <span class="msg-name">${name}</span>
+          <span class="msg-time">${getTimestamp()}</span>
+        </div>
+        <div class="msg-text" id="text-${id}">${
+          isThinking
+            ? '<span class="thinking-dots"><span>.</span><span>.</span><span>.</span></span>'
+            : formatText(text)
+        }</div>
+      </div>`;
+
+    wrap.appendChild(div);
+    wrap.scrollTop = wrap.scrollHeight;
+    return id;
+  }
+
+  function formatText(text) {
+    // code blocks
+    text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+    // inline code
+    text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+    // bold
+    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    // italic
+    text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    // newlines
+    text = text.replace(/\n/g, '<br>');
+    return text;
+  }
+
+  function updateMessage(id, text) {
+    const el = document.getElementById('text-' + id);
+    if (el) {
+      el.innerHTML = formatText(text);
+      document.getElementById('chatWrap').scrollTop = document.getElementById('chatWrap').scrollHeight;
+    }
+  }
+
+  function showToast(msg, duration = 3000) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', duration);
+  }
+
+  async function sendMessage() {
+    const input   = document.getElementById('userInput');
+    const apiKey  = document.getElementById('apiKey').value.trim();
+    const sysText = document.getElementById('sysInstructions').value.trim();
+    const text    = input.value.trim();
+
+    if (!text) return;
+    if (!apiKey) { showToast('⚠ API KEY required'); return; }
+
+    // disable input
+    document.getElementById('sendBtn').disabled = true;
+    input.value = '';
+    input.style.height = '44px';
+
+    // push user message
+    messages.push({ role: 'user', content: text });
+    renderMessage('user', text);
+
+    // placeholder for bot
+    const botId = renderMessage('bot', '', true);
+
+    // build payload
+    const payload = {
+      model: getModel(),
+      messages: [
+        ...(sysText ? [{ role: 'system', content: sysText }] : []),
+        ...messages
+      ],
+      stream: true
+    };
+
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: { message: res.statusText } }));
+        throw new Error(err.error?.message || `HTTP ${res.status}`);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let full = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n').filter(l => l.startsWith('data: '));
+        for (const line of lines) {
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') break;
+          try {
+            const json = JSON.parse(data);
+            const delta = json.choices?.[0]?.delta?.content || '';
+            full += delta;
+            updateMessage(botId, full);
+          } catch {}
+        }
+      }
+
+      messages.push({ role: 'assistant', content: full });
+
+    } catch (err) {
+      updateMessage(botId, `⚠ ERROR: ${err.message}`);
+      // remove last user message from history on error
+      messages.pop();
+    }
+
+    document.getElementById('sendBtn').disabled = false;
+    input.focus();
+  }
+
+  function clearChat() {
+    messages = [];
+    const wrap = document.getElementById('chatWrap');
+    wrap.innerHTML = `
+      <div id="emptyState">
+        <div class="big-icon">⬡</div>
+        <div class="big-label">TERMINAL READY</div>
+        <div class="big-sub">// Initialize query sequence to begin</div>
+      </div>`;
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  function autoResize(el) {
+    el.style.height = '44px';
+    el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+  }
+</script>
+</body>
+</html>
