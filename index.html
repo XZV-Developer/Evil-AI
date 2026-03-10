@@ -505,29 +505,24 @@
       font-size: 12px;
       color: var(--accent);
     }
-    .msg-text pre {
-      background: #050d14;
+    .code-wrap {
+      margin: 8px 0;
       border: 1px solid var(--border);
       border-left: 3px solid var(--dim);
-      padding: 10px 12px;
-      margin: 8px 0;
       border-radius: 0 3px 3px 0;
-      overflow-x: auto;
-      font-family: var(--font-mono);
-      font-size: 12px;
-      color: #7be8d8;
-      position: relative;
+      overflow: hidden;
     }
     .pre-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
-      padding-bottom: 6px;
+      padding: 5px 10px;
+      background: #040c12;
       border-bottom: 1px solid #0a2030;
-      min-height: 20px;
+      min-height: 26px;
     }
     .pre-lang {
+      font-family: var(--font-mono);
       font-size: 9px;
       color: var(--muted);
       letter-spacing: .1em;
@@ -548,6 +543,15 @@
     }
     .copy-btn:hover { color: var(--accent); border-color: var(--dim); }
     .copy-btn.copied { color: #00ff88; border-color: #00ff88; }
+    .msg-text pre {
+      background: #050d14;
+      padding: 10px 12px;
+      margin: 0;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: #7be8d8;
+    }
 
     .msg-actions {
       display: flex;
@@ -1178,7 +1182,7 @@
       const escapedCode = escapeHtmlRaw(code.replace(/^\n|\n$/g,''));
       const rawForCopy  = code.replace(/^\n|\n$/g,'').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n');
       const langLabel   = lang ? `<span class="pre-lang">${escapeHtmlRaw(lang.toUpperCase())}</span>` : '<span></span>';
-      codeBlocks.push(`<pre><div class="pre-header">${langLabel}<button class="copy-btn" onclick="copyCode(this, '${rawForCopy}')">COPY</button></div><code>${escapedCode}</code></pre>`);
+      codeBlocks.push(`<div class="code-wrap"><div class="pre-header">${langLabel}<button class="copy-btn" onclick="copyCode(this, '${rawForCopy}')">COPY</button></div><pre><code>${escapedCode}</code></pre></div>`);
       return PH_BLOCK(idx);
     });
 
