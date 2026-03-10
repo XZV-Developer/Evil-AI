@@ -518,29 +518,36 @@
       color: #7be8d8;
       position: relative;
     }
+    .pre-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #0a2030;
+      min-height: 20px;
+    }
+    .pre-lang {
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: .1em;
+    }
     .copy-btn {
-      position: absolute;
-      top: 6px; right: 6px;
       font-family: var(--font-mono);
       font-size: 9px;
       color: var(--muted);
       background: #0a1a22;
       border: 1px solid var(--border);
-      padding: 3px 8px;
+      padding: 3px 10px;
       border-radius: 2px;
       cursor: pointer;
       letter-spacing: 0.08em;
       transition: all 0.15s;
       user-select: none;
+      flex-shrink: 0;
     }
-    .copy-btn:hover {
-      color: var(--accent);
-      border-color: var(--dim);
-    }
-    .copy-btn.copied {
-      color: #00ff88;
-      border-color: #00ff88;
-    }
+    .copy-btn:hover { color: var(--accent); border-color: var(--dim); }
+    .copy-btn.copied { color: #00ff88; border-color: #00ff88; }
 
     .msg-actions {
       display: flex;
@@ -1142,10 +1149,10 @@
     // 1. Extract fenced code blocks (``` ... ```)
     let text = raw.replace(/```(\w*)\r?\n?([\s\S]*?)```/g, (_, lang, code) => {
       const idx = codeBlocks.length;
-      const langLabel = lang ? `<span style="font-size:9px;color:var(--muted);display:block;margin-bottom:4px;letter-spacing:.1em">${escapeHtmlRaw(lang.toUpperCase())}</span>` : '';
       const escapedCode = escapeHtmlRaw(code.replace(/^\n|\n$/g,''));
-      const rawForCopy  = code.replace(/^\n|\n$/g,'').replace(/'/g, "\\'").replace(/\n/g, '\\n');
-      codeBlocks.push(`<pre><button class="copy-btn" onclick="copyCode(this, '${rawForCopy}')">COPY</button>${langLabel}<code>${escapedCode}</code></pre>`);
+      const rawForCopy  = code.replace(/^\n|\n$/g,'').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n');
+      const langLabel   = lang ? `<span class="pre-lang">${escapeHtmlRaw(lang.toUpperCase())}</span>` : '<span></span>';
+      codeBlocks.push(`<pre><div class="pre-header">${langLabel}<button class="copy-btn" onclick="copyCode(this, '${rawForCopy}')">COPY</button></div><code>${escapedCode}</code></pre>`);
       return PH_BLOCK(idx);
     });
 
@@ -1359,7 +1366,7 @@
   }
 
   function copyCode(btn, escaped) {
-    const text = escaped.replace(/\\n/g, '\n').replace(/\\'/g, "'");
+    const text = escaped.replace(/\\n/g, '\n').replace(/\\'/g, "'").replace(/\\\\/g, '\\');
     navigator.clipboard.writeText(text).then(() => {
       btn.textContent = 'COPIED!';
       btn.classList.add('copied');
