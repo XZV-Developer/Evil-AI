@@ -874,6 +874,227 @@
       flex-shrink: 0;
     }
 
+    /* ─── MODE TABS ──────────────────────────── */
+    .mode-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .mode-tab {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      padding: 8px 18px;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .mode-tab:hover { color: var(--text); }
+    .mode-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .mode-tab .tab-badge {
+      font-size: 8px;
+      background: var(--accent2);
+      color: #fff;
+      padding: 1px 4px;
+      border-radius: 2px;
+    }
+
+    /* ─── IMAGE ATTACH ───────────────────────── */
+    #attachPreview {
+      display: none;
+      gap: 6px;
+      padding: 6px 0 2px;
+      flex-wrap: wrap;
+    }
+    #attachPreview.has-img { display: flex; }
+    .attach-thumb {
+      position: relative;
+      width: 52px; height: 52px;
+      border: 1px solid var(--dim);
+      border-radius: 3px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .attach-thumb img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .attach-remove {
+      position: absolute;
+      top: 1px; right: 1px;
+      background: rgba(0,0,0,0.7);
+      border: none;
+      color: var(--accent2);
+      font-size: 10px;
+      width: 14px; height: 14px;
+      border-radius: 2px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      line-height: 1;
+    }
+    .attach-btn {
+      height: 44px; width: 44px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted);
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .attach-btn:hover { color: var(--accent); border-color: var(--dim); }
+    .attach-btn.has-img { color: var(--accent); border-color: var(--accent); }
+
+    /* ─── VIDEO GENERATOR ────────────────────── */
+    #videoPanel {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 0;
+      gap: 12px;
+    }
+    #videoPanel.active { display: flex; }
+
+    .veo-config {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .veo-config-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .veo-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      white-space: nowrap;
+      min-width: 80px;
+    }
+    #veoEndpoint { flex: 1; min-width: 200px; font-size: 11px; }
+    #veoModel { min-width: 200px; }
+    #veoDuration { width: 70px; }
+    #veoAspect  { width: 110px; }
+
+    .veo-prompt-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    #veoPrompt {
+      width: 100%;
+      height: 90px;
+      resize: vertical;
+      font-size: 13px;
+      font-family: var(--font-body);
+      line-height: 1.5;
+    }
+    .veo-generate-btn {
+      font-family: var(--font-head);
+      font-size: 12px;
+      letter-spacing: 0.15em;
+      color: var(--bg);
+      background: linear-gradient(135deg, var(--accent), #00c8b8);
+      border: none;
+      padding: 10px 24px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s;
+      align-self: flex-start;
+    }
+    .veo-generate-btn:hover { box-shadow: var(--glow); transform: translateY(-1px); }
+    .veo-generate-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .veo-result-area {
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      background: #020c12;
+    }
+    .veo-result-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--muted);
+    }
+    .veo-result-head span { color: var(--accent); }
+    .veo-dl-btn {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--accent);
+      background: rgba(0,255,231,0.08);
+      border: 1px solid var(--dim);
+      padding: 3px 10px;
+      border-radius: 2px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+    .veo-dl-btn:hover { background: rgba(0,255,231,0.18); }
+    #veoVideoWrap video {
+      width: 100%;
+      display: block;
+      background: #000;
+    }
+    .veo-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 32px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--accent);
+    }
+    .veo-spinner {
+      width: 20px; height: 20px;
+      border: 2px solid var(--dim);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .veo-history {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .veo-hist-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+    .veo-hist-label::before { content: '// '; color: var(--accent2); }
+
+    /* hide chat elements when in video mode */
+    #app.video-mode #chatWrap,
+    #app.video-mode .input-row { display: none !important; }
+    #app.chat-mode #videoPanel { display: none !important; }
+
     @media (max-width: 600px) {
       .logo-text { font-size: 14px; }
       .status-bar .hide-sm { display: none; }
@@ -937,6 +1158,12 @@
     <button class="btn-sys" id="toggleSys" onclick="toggleSysPanel()">⚙ SYSTEM PROMPT</button>
   </div>
 
+  <!-- MODE TABS -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="tabChat" onclick="switchMode('chat')">💬 CHAT</button>
+    <button class="mode-tab" id="tabVideo" onclick="switchMode('video')">🎬 VIDEO GEN <span class="tab-badge">VEO</span></button>
+  </div>
+
   <!-- SYSTEM INSTRUCTIONS PANEL -->
   <div id="sysPanel">
 
@@ -991,9 +1218,71 @@
     </div>
   </div>
 
+  <!-- VIDEO GENERATOR PANEL -->
+  <div id="videoPanel">
+    <div class="veo-config">
+      <div class="veo-config-row">
+        <span class="veo-label">ENDPOINT:</span>
+        <span style="font-family:var(--font-mono);font-size:11px;color:var(--accent);flex:1">
+          🔗 <span id="veoEndpointDisplay"></span>
+        </span>
+      </div>
+      <div class="veo-config-row">
+        <span class="veo-label">MODEL:</span>
+        <select id="veoModel">
+          <option value="gemini/veo-3.1-generate-preview" selected>veo-3.1-preview</option>
+          <option value="gemini/veo-3.0-generate-001">veo-3.0</option>
+          <option value="gemini/veo-2.0-generate-001">veo-2.0</option>
+        </select>
+        <span class="veo-label">DURASI:</span>
+        <select id="veoDuration">
+          <option value="5">5s</option>
+          <option value="8" selected>8s</option>
+          <option value="10">10s</option>
+          <option value="15">15s</option>
+        </select>
+        <span class="veo-label">RASIO:</span>
+        <select id="veoAspect">
+          <option value="16:9" selected>16:9</option>
+          <option value="9:16">9:16</option>
+          <option value="1:1">1:1</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="veo-prompt-wrap">
+      <textarea id="veoPrompt" placeholder="Deskripsikan video yang ingin di-generate...
+Contoh: A cinematic drone shot flying over a neon-lit cyberpunk city at night, rain reflecting lights on wet streets, ultra detailed"></textarea>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button class="veo-generate-btn" id="veoBtn" onclick="generateVideo()">⬡ GENERATE VIDEO</button>
+        <span style="font-family:var(--font-mono);font-size:10px;color:var(--muted)">Via /chat/completions · API KEY dari atas</span>
+      </div>
+    </div>
+
+    <div id="veoResultArea" style="display:none" class="veo-result-area">
+      <div class="veo-result-head">
+        <span id="veoResultLabel">// OUTPUT</span>
+        <a id="veoDownload" class="veo-dl-btn" download="cybermind_video.mp4">⬇ DOWNLOAD</a>
+      </div>
+      <div id="veoVideoWrap"></div>
+    </div>
+
+    <div id="veoHistory" class="veo-history"></div>
+  </div>
+
   <!-- INPUT ROW -->
   <div class="input-row">
+    <!-- Image attach button -->
+    <button class="attach-btn" id="attachBtn" onclick="document.getElementById('imgInput').click()" title="Attach image">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+        <polyline points="21 15 16 10 5 21"/>
+      </svg>
+    </button>
+    <input type="file" id="imgInput" accept="image/*" multiple style="display:none" onchange="handleImageAttach(event)"/>
+
     <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+      <div id="attachPreview"></div>
       <textarea id="userInput" placeholder="Enter command or query..." onkeydown="handleKey(event)" oninput="autoResize(this);updateCharCount(this)"></textarea>
       <div id="charCount" style="font-family:var(--font-mono);font-size:9px;color:var(--muted);text-align:right;padding-right:2px;">0 / 4000</div>
     </div>
@@ -1372,7 +1661,7 @@
       const escapedCode = escapeHtmlRaw(code.replace(/^\n|\n$/g,''));
       const rawForCopy  = code.replace(/^\n|\n$/g,'').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n');
       const langLabel   = lang ? `<span class="pre-lang">${escapeHtmlRaw(lang.toUpperCase())}</span>` : '<span></span>';
-      codeBlocks.push(`<div class="code-wrap"><div class="pre-header">${langLabel}<button class="copy-btn" onclick="copyCode(this)">COPY</button></div><pre><code>${escapedCode}</code></pre></div>`);
+      codeBlocks.push(`<div class="code-wrap"><div class="pre-header">${langLabel}<button class="copy-btn" onclick="copyCode(this, '${rawForCopy}')">COPY</button></div><pre><code>${escapedCode}</code></pre></div>`);
       return PH_BLOCK(idx);
     });
 
@@ -1467,9 +1756,30 @@
     input.value = '';
     input.style.height = '44px';
 
-    messages.push({ role: 'user', content: text });
+    const userContent = buildUserContent(text);
+    const sentImages  = [...attachedImages];
+    attachedImages = [];
+    renderAttachPreview();
+
+    messages.push({ role: 'user', content: userContent });
     trimHistory();
-    renderMessage('user', text);
+
+    // Render user bubble with images
+    const uid = 'msg-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+    const udiv = document.createElement('div');
+    udiv.className = 'msg user';
+    udiv.id = uid;
+    udiv.innerHTML = `
+      <div class="msg-avatar">YOU</div>
+      <div class="msg-body">
+        <div class="msg-meta"><span class="msg-name">OPERATOR</span><span class="msg-time">${getTimestamp()}</span></div>
+        <div class="msg-text" id="text-${uid}">${escapeHtmlRaw(text)}${renderImagesInBubble(sentImages)}</div>
+      </div>`;
+    const wrap = document.getElementById('chatWrap');
+    const empty = document.getElementById('emptyState');
+    if (empty) empty.remove();
+    wrap.appendChild(udiv);
+    wrap.scrollTop = wrap.scrollHeight;
 
     const botId = renderMessage('bot', '', true);
 
@@ -1818,42 +2128,316 @@
     body.appendChild(actions);
   }
 
-  function copyCode(btn) {
-  const codeEl = btn.parentElement.nextElementSibling.querySelector("code");
-  if (!codeEl) return;
+  function copyCode(btn, escaped) {
+    const text = escaped.replace(/\\n/g, '\n').replace(/\\'/g, "'").replace(/\\\\/g, '\\');
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'COPIED!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'COPY'; btn.classList.remove('copied'); }, 2000);
+    }).catch(() => {
+      // Fallback for browsers without clipboard API
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy');
+      document.body.removeChild(ta);
+      btn.textContent = 'COPIED!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'COPY'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
 
-  const text = codeEl.innerText;
+  // ══════════════════════════════════════════
+  // MODE SWITCHING
+  // ══════════════════════════════════════════
+  let currentMode = 'chat';
 
-  navigator.clipboard.writeText(text).then(() => {
-    btn.textContent = "COPIED!";
-    btn.classList.add("copied");
+  function switchMode(mode) {
+    currentMode = mode;
+    const app = document.getElementById('app');
+    const chatTab  = document.getElementById('tabChat');
+    const videoTab = document.getElementById('tabVideo');
+    const sysBtn   = document.getElementById('toggleSys');
 
-    setTimeout(() => {
-      btn.textContent = "COPY";
-      btn.classList.remove("copied");
-    }, 2000);
+    if (mode === 'video') {
+      app.classList.remove('chat-mode');
+      app.classList.add('video-mode');
+      document.getElementById('videoPanel').classList.add('active');
+      chatTab.classList.remove('active');
+      videoTab.classList.add('active');
+      // Hide system prompt button (not relevant for video)
+      sysBtn.style.display = 'none';
+      // Close sys panel if open
+      document.getElementById('sysPanel').classList.remove('open');
+    } else {
+      app.classList.remove('video-mode');
+      app.classList.add('chat-mode');
+      document.getElementById('videoPanel').classList.remove('active');
+      chatTab.classList.add('active');
+      videoTab.classList.remove('active');
+      sysBtn.style.display = '';
+    }
+  }
 
-  }).catch(() => {
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    ta.style.position = "fixed";
-    ta.style.opacity = "0";
-    document.body.appendChild(ta);
+  // Init with chat-mode class
+  document.getElementById('app').classList.add('chat-mode');
 
-    ta.select();
-    document.execCommand("copy");
+  // ══════════════════════════════════════════
+  // IMAGE ATTACH (for vision models)
+  // ══════════════════════════════════════════
+  let attachedImages = []; // [{base64, mimeType, name}]
 
-    document.body.removeChild(ta);
+  function handleImageAttach(event) {
+    const files = [...event.target.files];
+    if (!files.length) return;
 
-    btn.textContent = "COPIED!";
-    btn.classList.add("copied");
+    const VISION_MODELS = ['gpt-4o','gpt-4o-mini','gpt-4.1','gpt-4.1-mini','gpt-5','gpt-5-mini',
+                           'claude-sonnet-4-5','claude-opus-4-5','gemini-2.0-flash'];
+    const model = getModel();
+    const isVision = VISION_MODELS.some(m => model.includes(m));
+    if (!isVision) {
+      showToast(`⚠ Model "${model}" tidak support gambar. Ganti ke gpt-4o / gemini / claude.`, 4000);
+      event.target.value = '';
+      return;
+    }
 
-    setTimeout(() => {
-      btn.textContent = "COPY";
-      btn.classList.remove("copied");
-    }, 2000);
-  });
-}
+    files.forEach(file => {
+      if (!file.type.startsWith('image/')) return;
+      if (attachedImages.length >= 4) { showToast('⚠ Max 4 gambar per pesan'); return; }
+      const reader = new FileReader();
+      reader.onload = e => {
+        const base64 = e.target.result.split(',')[1];
+        attachedImages.push({ base64, mimeType: file.type, name: file.name });
+        renderAttachPreview();
+      };
+      reader.readAsDataURL(file);
+    });
+    event.target.value = '';
+  }
+
+  function renderAttachPreview() {
+    const wrap = document.getElementById('attachPreview');
+    const btn  = document.getElementById('attachBtn');
+    wrap.innerHTML = '';
+    if (attachedImages.length === 0) {
+      wrap.classList.remove('has-img');
+      btn.classList.remove('has-img');
+      return;
+    }
+    wrap.classList.add('has-img');
+    btn.classList.add('has-img');
+    attachedImages.forEach((img, i) => {
+      const thumb = document.createElement('div');
+      thumb.className = 'attach-thumb';
+      thumb.innerHTML = `
+        <img src="data:${img.mimeType};base64,${img.base64}" alt="${escapeHtmlRaw(img.name)}"/>
+        <button class="attach-remove" onclick="removeImage(${i})">✕</button>`;
+      wrap.appendChild(thumb);
+    });
+  }
+
+  function removeImage(idx) {
+    attachedImages.splice(idx, 1);
+    renderAttachPreview();
+  }
+
+  // Build message content with images
+  function buildUserContent(text) {
+    if (attachedImages.length === 0) return text;
+    const content = [{ type: 'text', text }];
+    attachedImages.forEach(img => {
+      content.push({
+        type: 'image_url',
+        image_url: { url: `data:${img.mimeType};base64,${img.base64}` }
+      });
+    });
+    return content;
+  }
+
+  // Render image thumbnails inside chat bubble
+  function renderImagesInBubble(images) {
+    if (!images || images.length === 0) return '';
+    return images.map(img =>
+      `<img src="data:${img.mimeType};base64,${img.base64}" style="max-width:100%;max-height:200px;border-radius:3px;margin-top:6px;border:1px solid var(--dim)" alt="attached"/>`
+    ).join('');
+  }
+
+  // ══════════════════════════════════════════
+  // ══════════════════════════════════════════
+  // VIDEO GENERATOR (Veo via /chat/completions)
+  // ══════════════════════════════════════════
+  const LS_VEO_HISTORY = 'cm_veo_history';
+
+  // Show endpoint on panel load
+  window.addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('veoEndpointDisplay');
+    if (el) el.textContent = API_URL;
+    renderVeoHistory();
+  }, { once: false });
+
+  async function generateVideo() {
+    const apiKey  = document.getElementById('apiKey').value.trim();
+    const model   = document.getElementById('veoModel').value;
+    const prompt  = document.getElementById('veoPrompt').value.trim();
+    const duration = parseInt(document.getElementById('veoDuration').value);
+    const aspect  = document.getElementById('veoAspect').value;
+
+    if (!apiKey) { showToast('⚠ API KEY kosong'); return; }
+    if (!prompt) { showToast('⚠ Prompt kosong'); return; }
+
+    const btn = document.getElementById('veoBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ GENERATING...';
+
+    const resultArea = document.getElementById('veoResultArea');
+    const videoWrap  = document.getElementById('veoVideoWrap');
+    resultArea.style.display = 'block';
+    videoWrap.innerHTML = `<div class="veo-loading"><div class="veo-spinner"></div>Mengirim ke ${model.split('/').pop()}...</div>`;
+    document.getElementById('veoResultLabel').textContent = '// GENERATING...';
+    document.getElementById('veoDownload').style.display = 'none';
+
+    // Kirim sebagai /chat/completions biasa
+    const payload = {
+      model,
+      messages: [
+        {
+          role: 'user',
+          content: `Generate a video: ${prompt}\nDuration: ${duration} seconds. Aspect ratio: ${aspect}.`
+        }
+      ],
+      stream: false,
+    };
+
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: { message: res.statusText } }));
+        throw new Error(err.error?.message || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      // Cari video URL dari berbagai kemungkinan format response
+      const videoUrl =
+        data?.choices?.[0]?.message?.content?.match(/https?:\/\/\S+\.mp4\S*/i)?.[0] ||
+        data?.data?.[0]?.url ||
+        data?.video_url ||
+        data?.url ||
+        data?.output_url ||
+        data?.generations?.[0]?.video?.url ||
+        null;
+
+      const rawContent = data?.choices?.[0]?.message?.content || '';
+
+      if (videoUrl) {
+        // Ada URL video langsung
+        videoWrap.innerHTML = `<video controls autoplay loop>
+          <source src="${escapeHtmlRaw(videoUrl)}" type="video/mp4">
+          <p style="padding:12px;font-family:var(--font-mono);font-size:11px">
+            Browser tidak bisa putar inline. <a href="${escapeHtmlRaw(videoUrl)}" target="_blank" style="color:var(--accent)">Buka di tab baru ↗</a>
+          </p>
+        </video>`;
+        document.getElementById('veoResultLabel').textContent = `// OUTPUT — ${model.split('/').pop()}`;
+        const dlBtn = document.getElementById('veoDownload');
+        dlBtn.href = videoUrl;
+        dlBtn.style.display = '';
+        saveVeoHistory({ prompt, model, videoUrl, aspect, duration, ts: Date.now() });
+        renderVeoHistory();
+        showToast('✔ Video berhasil di-generate!');
+
+      } else if (rawContent) {
+        // Response berupa teks (mungkin URL dalam teks atau deskripsi)
+        // Cari URL apapun dalam teks
+        const urlMatch = rawContent.match(/https?:\/\/[^\s"'<>]+/g);
+        if (urlMatch) {
+          const firstUrl = urlMatch[0];
+          const isVideo = /\.(mp4|webm|mov|avi)/i.test(firstUrl);
+          if (isVideo) {
+            videoWrap.innerHTML = `<video controls autoplay loop>
+              <source src="${escapeHtmlRaw(firstUrl)}" type="video/mp4">
+            </video>`;
+            document.getElementById('veoDownload').href = firstUrl;
+            document.getElementById('veoDownload').style.display = '';
+            saveVeoHistory({ prompt, model, videoUrl: firstUrl, aspect, duration, ts: Date.now() });
+            renderVeoHistory();
+            showToast('✔ Video URL ditemukan!');
+          } else {
+            // URL bukan video, tampilkan sebagai teks dengan link clickable
+            videoWrap.innerHTML = `<div style="padding:14px;font-family:var(--font-mono);font-size:12px;color:var(--text);line-height:1.7">
+              ${escapeHtmlRaw(rawContent).replace(
+                /https?:\/\/[^\s"'<>&]+/g,
+                u => `<a href="${u}" target="_blank" style="color:var(--accent);word-break:break-all">${u}</a>`
+              )}
+            </div>`;
+          }
+        } else {
+          // Murni teks — tampilkan raw response
+          videoWrap.innerHTML = `<div style="padding:14px;font-family:var(--font-mono);font-size:12px;color:var(--text);line-height:1.7;white-space:pre-wrap">${escapeHtmlRaw(rawContent)}</div>`;
+        }
+        document.getElementById('veoResultLabel').textContent = `// RESPONSE — ${model.split('/').pop()}`;
+        showToast('Response diterima — lihat output');
+      } else {
+        throw new Error('Response kosong. Raw: ' + JSON.stringify(data).slice(0, 300));
+      }
+
+    } catch (err) {
+      const msg = err.message.length > 300 ? err.message.slice(0, 300) + '…' : err.message;
+      videoWrap.innerHTML = `<div class="veo-loading" style="color:var(--accent2);flex-direction:column;gap:8px;text-align:left;padding:16px">
+        <span style="font-size:13px">⚠ ERROR</span>
+        <span style="font-size:11px;opacity:.8">${escapeHtmlRaw(msg)}</span>
+      </div>`;
+      document.getElementById('veoResultLabel').textContent = '// ERROR';
+    }
+
+    btn.disabled = false;
+    btn.textContent = '⬡ GENERATE VIDEO';
+  }
+
+  function saveVeoHistory(entry) {
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(LS_VEO_HISTORY) || '[]'); } catch {}
+    hist.unshift(entry);
+    localStorage.setItem(LS_VEO_HISTORY, JSON.stringify(hist.slice(0, 20)));
+  }
+
+  function renderVeoHistory() {
+    const wrap = document.getElementById('veoHistory');
+    if (!wrap) return;
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(LS_VEO_HISTORY) || '[]'); } catch {}
+    if (hist.length === 0) { wrap.innerHTML = ''; return; }
+    wrap.innerHTML = `<div class="veo-hist-label">RIWAYAT GENERATE (${hist.length})</div>` +
+      hist.map((h, i) => `
+        <div class="veo-result-area">
+          <div class="veo-result-head">
+            <span>${escapeHtmlRaw(h.prompt.slice(0, 50))}${h.prompt.length > 50 ? '…' : ''} · ${h.model.split('/').pop()} · ${formatRelTime(h.ts)}</span>
+            <div style="display:flex;gap:6px;align-items:center">
+              <a class="veo-dl-btn" href="${escapeHtmlRaw(h.videoUrl)}" download="veo_${i}.mp4">⬇</a>
+              <button class="veo-dl-btn" style="color:var(--accent2)" onclick="deleteVeoHist(${i})">✕</button>
+            </div>
+          </div>
+          <video controls style="width:100%;max-height:200px;background:#000;">
+            <source src="${escapeHtmlRaw(h.videoUrl)}" type="video/mp4">
+          </video>
+        </div>`).join('');
+  }
+
+  function deleteVeoHist(idx) {
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(LS_VEO_HISTORY) || '[]'); } catch {}
+    hist.splice(idx, 1);
+    localStorage.setItem(LS_VEO_HISTORY, JSON.stringify(hist));
+    renderVeoHistory();
+  }
 
   function updateCharCount(el) {
     const len = el.value.length;
