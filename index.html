@@ -2,2455 +2,431 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>CyberMind AI // Secure Terminal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>CyberMind AI // Veo 3.1 Preview</title>
 
-  <!-- ══ SECURITY HEADERS ══════════════════════════════════════
-       CSP: hanya izinkan script dari diri sendiri (inline diizinkan karena single-file),
-       style dari googleapis, connect ke API endpoint & fonts saja.
-       Blokir object/embed/frame. -->
-  <meta http-equiv="Content-Security-Policy" content="
-    default-src 'self';
-    script-src 'self' 'unsafe-inline';
-    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-    font-src https://fonts.gstatic.com;
-    connect-src https://litellm.koboi2026.biz.id;
-    img-src 'self' data:;
-    object-src 'none';
-    frame-src 'none';
-    base-uri 'self';
-    form-action 'none';
-  "/>
-  <!-- Cegah halaman di-embed di iframe (clickjacking) -->
-  <meta http-equiv="X-Frame-Options" content="DENY"/>
-  <!-- Jangan kirim Referer ke external site -->
-  <meta name="referrer" content="no-referrer"/>
-  <!-- Matikan sniffing MIME type -->
-  <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet"/>
   <style>
+    /* ══════════════════════════════════════════
+       CSS PERBAIKAN TOTAL (RESPONSIF SELULER FIRST)
+       ══════════════════════════════════════════ */
     :root {
-      --bg:        #030a0e;
-      --panel:     #050f14;
-      --border:    #0d3040;
-      --accent:    #00ffe7;
-      --accent2:   #ff003c;
-      --dim:       #0a5060;
-      --text:      #c8f0f8;
-      --muted:     #3d7a8a;
-      --user-bg:   #051820;
-      --bot-bg:    #030f14;
-      --glow:      0 0 12px #00ffe780;
+      --bg: #030a0e;
+      --panel: #05121a;
+      --accent: #00ffe7;
+      --accent-rgb: 0, 255, 231;
+      --warn: #ff003c;
+      --text: #e0f2f1;
+      --muted: #607d8b;
       --font-mono: 'Share Tech Mono', monospace;
-      --font-head: 'Orbitron', sans-serif;
-      --font-body: 'Rajdhani', sans-serif;
+      --font-main: 'Rajdhani', sans-serif;
     }
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    html { height: -webkit-fill-available; } /* Fix iOS safari vh issue */
 
-    html {
-      height: 100%;
-      height: -webkit-fill-available;
-    }
     body {
-      height: 100%;
-      height: 100dvh;
       background: var(--bg);
       color: var(--text);
-      font-family: var(--font-body);
-      font-size: 15px;
+      font-family: var(--font-main);
+      height: 100vh;
+      height: -webkit-fill-available;
+      display: flex;
+      flex-direction: column;
       overflow: hidden;
+      padding-bottom: env(safe-area-inset-bottom);
     }
 
-    /* scanline overlay */
+    /* Scanline overlay - memperkuat Cyber feel */
     body::before {
       content: '';
-      position: fixed; inset: 0;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0,255,231,0.015) 2px,
-        rgba(0,255,231,0.015) 4px
-      );
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 231, 0.015) 2px, rgba(0, 255, 231, 0.015) 4px);
       pointer-events: none;
       z-index: 9999;
     }
 
-    /* corner grid bg */
-    body::after {
-      content: '';
-      position: fixed; inset: 0;
-      background-image:
-        linear-gradient(rgba(0,255,231,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,255,231,0.03) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-      z-index: 0;
-    }
-
     #app {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      flex-direction: column;
-      height: 100dvh;
-      height: -webkit-fill-available;
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 0 12px;
-      /* prevent content going behind browser chrome */
-      padding-bottom: env(safe-area-inset-bottom, 0px);
-    }
-
-    /* ─── HEADER ─────────────────────────────── */
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 0 10px;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .logo-icon {
-      width: 38px; height: 38px;
-      position: relative;
-    }
-    .logo-icon svg { width: 100%; height: 100%; }
-
-    .logo-text {
-      font-family: var(--font-head);
-      font-size: 18px;
-      font-weight: 900;
-      letter-spacing: 0.15em;
-      color: var(--accent);
-      text-shadow: var(--glow);
-    }
-    .logo-text span { color: var(--accent2); }
-
-    .logo-sub {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      color: var(--muted);
-      letter-spacing: 0.2em;
-      margin-top: 2px;
-    }
-
-    .status-bar {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--muted);
-    }
-    .status-dot {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: #00ff88;
-      box-shadow: 0 0 6px #00ff88;
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0%,100% { opacity: 1; }
-      50% { opacity: 0.3; }
-    }
-
-    /* ─── CONFIG ROW ─────────────────────────── */
-    .config-row {
-      display: flex;
-      gap: 8px;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-      align-items: center;
-      flex-wrap: wrap;
-      flex-shrink: 0;
-    }
-
-    .cfg-label {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      color: var(--muted);
-      letter-spacing: 0.1em;
-      white-space: nowrap;
-    }
-
-    input[type="text"], input[type="password"], select, textarea {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      color: var(--text);
-      font-family: var(--font-mono);
-      font-size: 12px;
-      padding: 6px 10px;
-      border-radius: 3px;
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    input[type="text"]:focus,
-    input[type="password"]:focus,
-    select:focus,
-    textarea:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 8px rgba(0,255,231,0.2);
-    }
-    select option { background: #0a1a22; }
-
-    #apiKey  { flex: 1; min-width: 140px; }
-    #model   { min-width: 160px; }
-
-    .btn-sys {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--accent);
-      background: transparent;
-      border: 1px solid var(--dim);
-      padding: 6px 12px;
-      border-radius: 3px;
-      cursor: pointer;
-      letter-spacing: 0.08em;
-      transition: all 0.2s;
-      white-space: nowrap;
-    }
-    .btn-sys:hover, .btn-sys.active {
-      background: rgba(0,255,231,0.1);
-      border-color: var(--accent);
-      box-shadow: var(--glow);
-    }
-
-    /* ─── SYSTEM INSTRUCTIONS PANEL ─────────── */
-    #sysPanel {
-      display: none;
-      flex-direction: column;
-      gap: 0;
-      border-bottom: 1px solid var(--border);
-      animation: slideDown 0.2s ease;
-      max-height: 420px;
-      overflow-y: auto;
-      scrollbar-width: thin;
-      scrollbar-color: var(--dim) transparent;
-    }
-    #sysPanel.open { display: flex; }
-
-    @keyframes slideDown {
-      from { opacity: 0; transform: translateY(-8px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .sys-section {
-      border-bottom: 1px solid #0a2030;
-      padding: 8px 0;
-    }
-    .sys-section:last-child { border-bottom: none; }
-
-    .sys-section-hdr {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 6px;
-    }
-
-    .sys-label {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      color: var(--accent);
-      letter-spacing: 0.15em;
-    }
-    .sys-label::before { content: '// '; color: var(--accent2); }
-
-    /* DEFAULT PERSONA */
-    .default-persona-box {
-      background: #040d13;
-      border: 1px solid #0a2535;
-      border-left: 3px solid var(--dim);
-      border-radius: 0 3px 3px 0;
-      padding: 8px 12px;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: #5aa8b8;
-      line-height: 1.5;
-      max-height: 70px;
-      overflow-y: auto;
-      white-space: pre-wrap;
-      word-break: break-word;
-      cursor: pointer;
-      transition: border-color 0.2s;
-      position: relative;
-    }
-    .default-persona-box:hover { border-left-color: var(--accent); }
-    .default-persona-box.active-persona {
-      border-left-color: var(--accent);
-      color: var(--text);
-      box-shadow: inset 0 0 12px rgba(0,255,231,0.04);
-    }
-    .default-persona-box.empty-default {
-      color: var(--muted);
-      font-style: italic;
-    }
-
-    .upload-btn {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      color: var(--accent);
-      background: rgba(0,255,231,0.06);
-      border: 1px solid var(--dim);
-      padding: 4px 10px;
-      border-radius: 2px;
-      cursor: pointer;
-      transition: all 0.15s;
-      white-space: nowrap;
-    }
-    .upload-btn:hover {
-      background: rgba(0,255,231,0.14);
-      border-color: var(--accent);
-    }
-
-    /* ACTIVE EDITOR */
-    #sysInstructions {
-      width: 100%;
-      height: 80px;
-      resize: vertical;
-      font-size: 12px;
-      line-height: 1.5;
-    }
-
-    .active-label {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      color: var(--muted);
-      margin-bottom: 4px;
-    }
-    .active-label span {
-      color: var(--accent);
-      font-weight: bold;
-    }
-
-    /* PERSONA LIST */
-    .persona-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      min-height: 26px;
-    }
-
-    .persona-chip {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      color: var(--muted);
-      background: transparent;
-      border: 1px solid #0d2530;
-      padding: 3px 8px 3px 10px;
-      border-radius: 2px;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .persona-chip:hover, .persona-chip.active-chip {
-      color: var(--accent);
-      border-color: var(--dim);
-      background: rgba(0,255,231,0.05);
-    }
-    .persona-chip.active-chip {
-      border-color: var(--accent);
-      box-shadow: 0 0 6px rgba(0,255,231,0.15);
-    }
-    .chip-del {
-      color: #2a5060;
-      font-size: 12px;
-      line-height: 1;
-      padding: 0 2px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      transition: color 0.15s;
-    }
-    .chip-del:hover { color: var(--accent2); }
-
-    /* ADD PERSONA FORM */
-    .add-persona-row {
-      display: flex;
-      gap: 6px;
-      align-items: stretch;
-      margin-top: 6px;
-    }
-    #newPersonaName {
-      width: 140px;
-      flex-shrink: 0;
-    }
-    .save-persona-btn {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      color: var(--accent);
-      background: rgba(0,255,231,0.06);
-      border: 1px solid var(--dim);
-      padding: 5px 12px;
-      border-radius: 2px;
-      cursor: pointer;
-      transition: all 0.15s;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-    .save-persona-btn:hover {
-      background: rgba(0,255,231,0.14);
-      border-color: var(--accent);
-      box-shadow: var(--glow);
-    }
-
-    /* ─── CHAT AREA ──────────────────────────── */
-    #chatWrap {
       flex: 1;
-      overflow-y: auto;
-      padding: 16px 0;
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      scrollbar-width: thin;
-      scrollbar-color: var(--dim) transparent;
+      border: 1px solid rgba(var(--accent-rgb), 0.2);
+      margin: 2%; /* Margin responsif */
+      background: rgba(5, 18, 26, 0.85);
+      backdrop-filter: blur(10px);
+      position: relative;
     }
-    #chatWrap::-webkit-scrollbar { width: 4px; }
-    #chatWrap::-webkit-scrollbar-track { background: transparent; }
-    #chatWrap::-webkit-scrollbar-thumb { background: var(--dim); border-radius: 2px; }
 
-    .msg {
+    header {
+      padding: 10px 15px;
+      border-bottom: 1px solid rgba(var(--accent-rgb), 0.2);
       display: flex;
-      gap: 12px;
-      animation: msgIn 0.2s ease;
-    }
-    @keyframes msgIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0, 255, 231, 0.03);
     }
 
-    .msg-avatar {
-      width: 32px; height: 32px;
-      border-radius: 3px;
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-head);
-      font-size: 11px;
-      font-weight: 700;
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
-    .msg.user .msg-avatar {
-      background: #0d2030;
-      border: 1px solid #1a4060;
-      color: var(--accent);
-    }
-    .msg.bot .msg-avatar {
-      background: #0a0f18;
-      border: 1px solid var(--dim);
-      color: var(--accent2);
-    }
+    .logo-text { font-weight: 700; font-size: 1.2rem; letter-spacing: 2px; }
+    .logo-text span { color: var(--accent); text-shadow: 0 0 10px var(--accent); }
 
-    .msg-body { flex: 1; min-width: 0; }
+    .clock { font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); }
 
-    .msg-meta {
+    /* PERBAIKAN TATA LETAK CONFIG - Responsif Total */
+    .config-row {
+      padding: 10px 15px;
+      background: rgba(0,0,0,0.3);
+      border-bottom: 1px solid rgba(var(--accent-rgb), 0.1);
       display: flex;
-      align-items: baseline;
+      flex-direction: column; /* Baris di tumpuk vertikal di seluler */
       gap: 10px;
-      margin-bottom: 4px;
-    }
-    .msg-name {
       font-family: var(--font-mono);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-    }
-    .msg.user .msg-name { color: var(--accent); }
-    .msg.bot  .msg-name { color: var(--accent2); }
-
-    .msg-time {
-      font-family: var(--font-mono);
-      font-size: 9px;
-      color: var(--muted);
+      font-size: 0.7rem;
     }
 
-    .msg-text {
-      background: var(--bot-bg);
-      border: 1px solid var(--border);
-      border-left: 3px solid;
-      padding: 10px 14px;
-      border-radius: 0 4px 4px 0;
-      line-height: 1.65;
-      font-size: 14px;
-      font-family: var(--font-body);
-      font-weight: 400;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-    .msg.user .msg-text {
-      background: var(--user-bg);
-      border-left-color: var(--accent);
-    }
-    .msg.bot .msg-text {
-      border-left-color: var(--accent2);
-    }
+    /* Grup config individu agar sejajar */
+    .config-group { display: flex; gap: 8px; align-items: center; width: 100%; }
+    .cfg-label { color: var(--muted); min-width: 4.5rem; text-align: right; }
 
-    /* code blocks inside messages */
-    .msg-text code {
+    input, select, textarea {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(var(--accent-rgb), 0.3);
+      color: var(--text);
+      padding: 6px 10px;
+      outline: none;
       font-family: var(--font-mono);
-      background: #071420;
-      border: 1px solid var(--border);
-      padding: 0 5px;
+      font-size: 0.8rem;
       border-radius: 2px;
-      font-size: 12px;
-      color: var(--accent);
     }
-    .code-wrap {
-      margin: 8px 0;
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--dim);
-      border-radius: 0 3px 3px 0;
+    input[type="password"] { flex: 1; } /* Kunci API mengisi lebar */
+    select { flex: 1; } /* Dropdown model mengisi lebar */
+
+    .mode-tabs { display: flex; background: #02080c; border-bottom: 1px solid rgba(var(--accent-rgb), 0.1); }
+    .tab {
+      flex: 1; /* Tab mengisi lebar penuh */
+      padding: 10px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      border-right: 1px solid rgba(var(--accent-rgb), 0.1);
+      transition: 0.3s;
+      text-align: center;
+    }
+    .tab.active {
+      color: var(--accent);
+      background: rgba(var(--accent-rgb), 0.1);
+      box-shadow: inset 0 -2px 0 var(--accent);
+    }
+
+    .main-panel { flex: 1; display: none; flex-direction: column; overflow-y: auto; padding: 15px; }
+    .main-panel.active { display: flex; }
+
+    /* Penyesuaian Panel Veo khusus */
+    #videoPanel { gap: 10px; }
+
+    /* Kotak Pratinjau Video Responsif */
+    .video-preview-wrap {
+      width: 100%;
+      aspect-ratio: 16/9; /* Proporsi standar */
+      background: #000;
+      border: 1px dashed var(--accent);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
       overflow: hidden;
     }
-    .pre-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 5px 10px;
-      background: #040c12;
-      border-bottom: 1px solid #0a2030;
-      min-height: 26px;
-    }
-    .pre-lang {
-      font-family: var(--font-mono);
-      font-size: 9px;
-      color: var(--muted);
-      letter-spacing: .1em;
-    }
-    .copy-btn {
-      font-family: var(--font-mono);
-      font-size: 9px;
-      color: var(--muted);
-      background: #0a1a22;
-      border: 1px solid var(--border);
-      padding: 3px 10px;
-      border-radius: 2px;
-      cursor: pointer;
-      letter-spacing: 0.08em;
-      transition: all 0.15s;
-      user-select: none;
-      flex-shrink: 0;
-    }
-    .copy-btn:hover { color: var(--accent); border-color: var(--dim); }
-    .copy-btn.copied { color: #00ff88; border-color: #00ff88; }
-    .msg-text pre {
-      background: #050d14;
-      padding: 10px 12px;
-      margin: 0;
-      overflow-x: auto;
-      font-family: var(--font-mono);
-      font-size: 12px;
-      color: #7be8d8;
-    }
+    .vid-placeholder { font-family: var(--font-mono); color: var(--muted); text-align: center; font-size: 0.8rem; line-height: 1.4; padding: 10px; }
 
-    .msg-actions {
-      display: flex;
-      gap: 6px;
-      margin-top: 5px;
-    }
-    .msg-action-btn {
-      font-family: var(--font-mono);
-      font-size: 9px;
-      color: var(--muted);
-      background: transparent;
-      border: 1px solid #0a2030;
-      padding: 2px 8px;
-      border-radius: 2px;
+    video { width: 100%; height: 100%; object-fit: contain; }
+
+    /* Area Prompts Video */
+    #videoPrompt { width: 100%; height: 6rem; resize: none; }
+
+    /* Tombol Generasi Utama */
+    .gen-btn {
+      width: 100%;
+      height: 2.8rem;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 4px;
+      font-weight: 700;
       cursor: pointer;
-      letter-spacing: 0.08em;
-      transition: all 0.15s;
+      font-family: var(--font-main);
+      font-size: 0.9rem;
+      transition: all 0.2s;
     }
-    .msg-action-btn:hover { color: var(--accent); border-color: var(--dim); }
-    .msg-action-btn.copied { color: #00ff88; border-color: #00ff88; }
-    .thinking-dots span {
-      animation: blink 1.2s infinite;
-      color: var(--accent);
-      font-family: var(--font-mono);
-      font-size: 20px;
-    }
+    .gen-btn:hover { box-shadow: 0 0 15px var(--accent); }
+    .gen-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+    /* Tampilan Thinking/Loading */
+    .thinking-dots span { animation: blink 1.4s infinite both; }
     .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
     .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes blink {
-      0%,80%,100% { opacity: 0; }
-      40% { opacity: 1; }
-    }
+    @keyframes blink { 0% { opacity: 0.2; } 20% { opacity: 1; } 100% { opacity: 0.2; } }
 
-    /* empty state */
-    #emptyState {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      opacity: 0.5;
-      text-align: center;
-      pointer-events: none;
-      user-select: none;
-    }
-    #emptyState .big-icon {
-      font-size: 48px;
-      filter: drop-shadow(var(--glow));
-    }
-    #emptyState .big-label {
-      font-family: var(--font-head);
-      font-size: 16px;
-      letter-spacing: 0.25em;
-      color: var(--accent);
-    }
-    #emptyState .big-sub {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--muted);
-    }
+    /* Tampilan Chat Area (Disembunyikan di tab Video) */
+    #chatPanel { display: none; }
+    #chatWrap { display: flex; flex-direction: column; gap: 15px; }
+    .msg { display: flex; gap: 10px; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .msg-avatar { width: 30px; height: 30px; background: rgba(var(--accent-rgb), 0.1); border: 1px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--accent); font-family: var(--font-mono); }
+    .msg-body { flex: 1; background: rgba(255,255,255,0.03); padding: 10px; border-radius: 2px; position: relative; font-size: 0.9rem; }
+    .msg.user .msg-body { border-left: 2px solid var(--accent); }
+    .msg.bot .msg-body { border-left: 2px solid var(--warn); }
 
-    /* ─── INPUT ROW ──────────────────────────── */
     .input-row {
+      padding: 10px 15px;
       display: flex;
       gap: 8px;
-      padding: 10px 0 12px;
-      border-top: 1px solid var(--border);
-      align-items: flex-end;
-      flex-shrink: 0;
+      background: #02080c;
+      border-top: 1px solid rgba(var(--accent-rgb), 0.2);
     }
+    #userInput { flex: 1; height: 3rem; }
+    .send-btn { background: var(--accent); color: #000; border: none; padding: 0 15px; font-weight: 700; cursor: pointer; font-family: var(--font-main); border-radius: 2px; }
 
-    #userInput {
-      flex: 1;
-      resize: none;
-      height: 44px;
-      max-height: 140px;
-      overflow-y: auto;
-      font-family: var(--font-body);
-      font-size: 14px;
-      line-height: 1.5;
-      padding: 10px 12px;
-      scrollbar-width: thin;
-      scrollbar-color: var(--dim) transparent;
-    }
-    #userInput::placeholder { color: var(--muted); }
-
-    .send-btn {
-      height: 44px;
-      width: 54px;
-      background: linear-gradient(135deg, #00ffe720, #00ffe730);
-      border: 1px solid var(--accent);
-      border-radius: 3px;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      transition: all 0.2s;
-      flex-shrink: 0;
-    }
-    .send-btn:hover {
-      background: rgba(0,255,231,0.2);
-      box-shadow: var(--glow);
-    }
-    .send-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-    .send-btn svg { color: var(--accent); }
-
-    .clear-btn {
-      height: 44px;
-      width: 44px;
-      background: transparent;
-      border: 1px solid var(--border);
-      border-radius: 3px;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      transition: all 0.2s;
-      flex-shrink: 0;
-      color: var(--muted);
-    }
-    .clear-btn:hover {
-      border-color: var(--accent2);
-      color: var(--accent2);
-    }
-
-    /* ─── FOOTER ─────────────────────────────── */
-    .footer {
-      font-family: var(--font-mono);
-      font-size: 9px;
-      color: #1a4050;
-      text-align: center;
-      padding: 2px 0 4px;
-      letter-spacing: 0.1em;
-      flex-shrink: 0;
-    }
-
-    /* ─── NOTIFICATION ───────────────────────── */
-    #toast {
-      position: fixed;
-      top: 16px; right: 16px;
-      background: #0d1f2a;
-      border: 1px solid var(--accent2);
-      color: var(--accent2);
-      font-family: var(--font-mono);
-      font-size: 12px;
-      padding: 8px 16px;
-      border-radius: 3px;
-      z-index: 99999;
-      display: none;
-      animation: fadeIn 0.2s;
-    }
-    @keyframes fadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
-
-    /* ─── HISTORY DRAWER ─────────────────────── */
-    #historyDrawer {
-      position: fixed;
-      top: 0; right: -320px;
-      width: 300px;
-      height: 100dvh;
-      background: #030d12;
-      border-left: 1px solid var(--border);
-      z-index: 9000;
-      display: flex;
-      flex-direction: column;
-      transition: right 0.25s cubic-bezier(.4,0,.2,1);
-      box-shadow: -8px 0 32px rgba(0,0,0,0.6);
-    }
-    #historyDrawer.open { right: 0; }
-
-    #historyOverlay {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 8999;
-      display: none;
-      backdrop-filter: blur(2px);
-    }
-    #historyOverlay.open { display: block; }
-
-    .hist-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 14px 10px;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-    .hist-title {
-      font-family: var(--font-head);
-      font-size: 13px;
-      letter-spacing: 0.15em;
-      color: var(--accent);
-    }
-    .hist-close {
-      font-family: var(--font-mono);
-      font-size: 12px;
-      color: var(--muted);
-      background: none;
-      border: 1px solid var(--border);
-      padding: 3px 10px;
-      border-radius: 2px;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .hist-close:hover { color: var(--accent2); border-color: var(--accent2); }
-
-    .hist-actions {
-      display: flex;
-      gap: 6px;
-      padding: 8px 14px;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-    .hist-btn {
-      flex: 1;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      letter-spacing: 0.08em;
-      padding: 6px 8px;
-      border-radius: 2px;
-      cursor: pointer;
-      transition: all 0.15s;
-      text-align: center;
-    }
-    .hist-btn-new {
-      color: var(--accent);
-      background: rgba(0,255,231,0.07);
-      border: 1px solid var(--dim);
-    }
-    .hist-btn-new:hover { background: rgba(0,255,231,0.15); border-color: var(--accent); }
-    .hist-btn-save {
-      color: #00ff88;
-      background: rgba(0,255,136,0.07);
-      border: 1px solid #0a4030;
-    }
-    .hist-btn-save:hover { background: rgba(0,255,136,0.15); border-color: #00ff88; }
-    .hist-btn-del {
-      color: var(--accent2);
-      background: rgba(255,0,60,0.07);
-      border: 1px solid #3a0010;
-    }
-    .hist-btn-del:hover { background: rgba(255,0,60,0.15); border-color: var(--accent2); }
-
-    .hist-search {
-      padding: 8px 14px;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-    .hist-search input {
-      width: 100%;
-      font-size: 11px;
-      padding: 5px 10px;
-    }
-
-    #sessionList {
-      flex: 1;
-      overflow-y: auto;
-      padding: 6px 0;
-      scrollbar-width: thin;
-      scrollbar-color: var(--dim) transparent;
-    }
-
-    .sess-item {
-      display: flex;
-      align-items: center;
-      gap: 0;
-      border-bottom: 1px solid #050f16;
-      transition: background 0.12s;
-      cursor: pointer;
-    }
-    .sess-item:hover { background: #071520; }
-    .sess-item.active-sess { background: #071d28; border-left: 2px solid var(--accent); }
-
-    .sess-main {
-      flex: 1;
-      padding: 9px 14px;
-      min-width: 0;
-    }
-    .sess-title {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--text);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .sess-item.active-sess .sess-title { color: var(--accent); }
-    .sess-meta {
-      font-family: var(--font-mono);
-      font-size: 9px;
-      color: var(--muted);
-      margin-top: 2px;
-    }
-    .sess-del {
-      padding: 8px 12px;
-      color: #1a3040;
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 14px;
-      transition: color 0.15s;
-      flex-shrink: 0;
-    }
-    .sess-del:hover { color: var(--accent2); }
-
-    .hist-empty {
-      text-align: center;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--muted);
-      padding: 32px 16px;
-    }
-
-    .hist-footer {
-      padding: 8px 14px;
-      border-top: 1px solid var(--border);
-      font-family: var(--font-mono);
-      font-size: 9px;
-      color: var(--muted);
-      text-align: center;
-      flex-shrink: 0;
-    }
-
-    /* ─── MODE TABS ──────────────────────────── */
-    .mode-tabs {
-      display: flex;
-      gap: 0;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-    .mode-tab {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      letter-spacing: 0.1em;
-      padding: 8px 18px;
-      cursor: pointer;
-      border: none;
-      background: transparent;
-      color: var(--muted);
-      border-bottom: 2px solid transparent;
-      transition: all 0.15s;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .mode-tab:hover { color: var(--text); }
-    .mode-tab.active {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
-    }
-    .mode-tab .tab-badge {
-      font-size: 8px;
-      background: var(--accent2);
-      color: #fff;
-      padding: 1px 4px;
-      border-radius: 2px;
-    }
-
-    /* ─── IMAGE ATTACH ───────────────────────── */
-    #attachPreview {
-      display: none;
-      gap: 6px;
-      padding: 6px 0 2px;
-      flex-wrap: wrap;
-    }
-    #attachPreview.has-img { display: flex; }
-    .attach-thumb {
-      position: relative;
-      width: 52px; height: 52px;
-      border: 1px solid var(--dim);
-      border-radius: 3px;
-      overflow: hidden;
-      flex-shrink: 0;
-    }
-    .attach-thumb img {
-      width: 100%; height: 100%;
-      object-fit: cover;
-    }
-    .attach-remove {
-      position: absolute;
-      top: 1px; right: 1px;
-      background: rgba(0,0,0,0.7);
-      border: none;
-      color: var(--accent2);
-      font-size: 10px;
-      width: 14px; height: 14px;
-      border-radius: 2px;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      line-height: 1;
-    }
-    .attach-btn {
-      height: 44px; width: 44px;
-      background: transparent;
-      border: 1px solid var(--border);
-      border-radius: 3px;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      color: var(--muted);
-      transition: all 0.15s;
-      flex-shrink: 0;
-    }
-    .attach-btn:hover { color: var(--accent); border-color: var(--dim); }
-    .attach-btn.has-img { color: var(--accent); border-color: var(--accent); }
-
-    /* ─── VIDEO GENERATOR ────────────────────── */
-    #videoPanel {
-      display: none;
-      flex-direction: column;
-      flex: 1;
-      overflow-y: auto;
-      padding: 14px 0;
-      gap: 12px;
-    }
-    #videoPanel.active { display: flex; }
-
-    .veo-config {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 3px;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .veo-config-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .veo-label {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      color: var(--muted);
-      letter-spacing: 0.1em;
-      white-space: nowrap;
-      min-width: 80px;
-    }
-    #veoEndpoint { flex: 1; min-width: 200px; font-size: 11px; }
-    #veoModel { min-width: 200px; }
-    #veoDuration { width: 70px; }
-    #veoAspect  { width: 110px; }
-
-    .veo-prompt-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    #veoPrompt {
-      width: 100%;
-      height: 90px;
-      resize: vertical;
-      font-size: 13px;
-      font-family: var(--font-body);
-      line-height: 1.5;
-    }
-    .veo-generate-btn {
-      font-family: var(--font-head);
-      font-size: 12px;
-      letter-spacing: 0.15em;
-      color: var(--bg);
-      background: linear-gradient(135deg, var(--accent), #00c8b8);
-      border: none;
-      padding: 10px 24px;
-      border-radius: 3px;
-      cursor: pointer;
-      transition: all 0.2s;
-      align-self: flex-start;
-    }
-    .veo-generate-btn:hover { box-shadow: var(--glow); transform: translateY(-1px); }
-    .veo-generate-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-    .veo-result-area {
-      border: 1px solid var(--border);
-      border-radius: 3px;
-      overflow: hidden;
-      background: #020c12;
-    }
-    .veo-result-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 12px;
-      border-bottom: 1px solid var(--border);
-      font-family: var(--font-mono);
-      font-size: 10px;
-      color: var(--muted);
-    }
-    .veo-result-head span { color: var(--accent); }
-    .veo-dl-btn {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      color: var(--accent);
-      background: rgba(0,255,231,0.08);
-      border: 1px solid var(--dim);
-      padding: 3px 10px;
-      border-radius: 2px;
-      cursor: pointer;
-      text-decoration: none;
-      transition: all 0.15s;
-    }
-    .veo-dl-btn:hover { background: rgba(0,255,231,0.18); }
-    #veoVideoWrap video {
-      width: 100%;
-      display: block;
-      background: #000;
-    }
-    .veo-loading {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      padding: 32px;
-      font-family: var(--font-mono);
-      font-size: 12px;
-      color: var(--accent);
-    }
-    .veo-spinner {
-      width: 20px; height: 20px;
-      border: 2px solid var(--dim);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .veo-history {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .veo-hist-label {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      color: var(--muted);
-      letter-spacing: 0.1em;
-    }
-    .veo-hist-label::before { content: '// '; color: var(--accent2); }
-
-    /* hide chat elements when in video mode */
-    #app.video-mode #chatWrap,
-    #app.video-mode .input-row { display: none !important; }
-    #app.chat-mode #videoPanel { display: none !important; }
-
-    @media (max-width: 600px) {
-      .logo-text { font-size: 14px; }
-      .status-bar .hide-sm { display: none; }
-      #model { min-width: 120px; }
-      #historyDrawer { width: 85vw; }
+    /* Desktop View Adjustment */
+    @media (min-width: 600px) {
+      .config-row { flex-direction: row; gap: 15px; }
+      .config-group { width: auto; flex: 1; }
     }
   </style>
 </head>
 <body>
-<div id="app">
 
-  <!-- HEADER -->
+<div id="app">
   <header>
     <div class="logo">
-      <div class="logo-icon">
-        <svg viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <polygon points="19,2 36,10 36,28 19,36 2,28 2,10" stroke="#00ffe7" stroke-width="1.5" fill="none" opacity="0.6"/>
-          <polygon points="19,7 31,13 31,25 19,31 7,25 7,13" stroke="#00ffe7" stroke-width="1" fill="none" opacity="0.3"/>
-          <circle cx="19" cy="19" r="5" fill="#00ffe7" opacity="0.9"/>
-          <circle cx="19" cy="19" r="8" stroke="#00ffe7" stroke-width="0.5" fill="none" opacity="0.4"/>
-          <line x1="19" y1="2" x2="19" y2="7" stroke="#ff003c" stroke-width="1.5"/>
-          <line x1="36" y1="10" x2="31" y2="13" stroke="#ff003c" stroke-width="1.5"/>
-          <line x1="36" y1="28" x2="31" y2="25" stroke="#ff003c" stroke-width="1.5"/>
-        </svg>
-      </div>
-      <div>
-        <div class="logo-text">CYBER<span>MIND</span></div>
-        <div class="logo-sub">SECURE AI TERMINAL v2.4.1</div>
-      </div>
+      <div class="logo-text">CYBER<span>MIND</span></div>
     </div>
-    <div class="status-bar">
-      <div class="status-dot"></div>
-      <span class="hide-sm">CONN: ENCRYPTED</span>
-      <span id="clock">--:--:--</span>
-      <button class="hist-close" style="font-size:10px;padding:2px 8px;" onclick="toggleHistory()" title="Chat History">⌗ HISTORY</button>
-    </div>
+    <div id="clock" class="clock">00:00:00</div>
   </header>
 
-  <!-- CONFIG ROW -->
   <div class="config-row">
-    <span class="cfg-label">API_KEY:</span>
-    <input type="password" id="apiKey" placeholder="sk-••••••••••••••••" />
-
-    <span class="cfg-label">MODEL:</span>
-    <select id="model">
-      <option value="vertex_ai/deepseek-ai/deepseek-v3.2-maas" selected>deepseek-v3.2 (vertex)</option>
-      <option value="gpt-5-mini">gpt-5-mini</option>
-      <option value="gpt-5">gpt-5</option>
-      <option value="gpt-4o-mini">gpt-4o-mini</option>
-      <option value="gpt-4o">gpt-4o</option>
-      <option value="gpt-4.1-mini">gpt-4.1-mini</option>
-      <option value="gpt-4.1">gpt-4.1</option>
-      <option value="claude-sonnet-4-5">claude-sonnet-4-5</option>
-      <option value="claude-opus-4-5">claude-opus-4-5</option>
-      <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-      <option value="custom">[ custom... ]</option>
-    </select>
-
-    <input type="text" id="customModel" placeholder="model name" style="display:none; width:150px;"/>
-
-    <button class="btn-sys" id="toggleSys" onclick="toggleSysPanel()">⚙ SYSTEM PROMPT</button>
+    <div class="config-group">
+      <span class="cfg-label">API_KEY:</span>
+      <input type="password" id="apiKey" placeholder="sk-..." value="">
+    </div>
+    <div class="config-group">
+      <span class="cfg-label">MODEL:</span>
+      <select id="model">
+        <option value="gemini/veo-3.1-generate-preview">Veo 3.1 Preview</option>
+        <option value="vertex_ai/veo-001">Veo-001 (Vertex AI)</option>
+        <option value="gemini/gemini-2.0-flash">Gemini 2.0 Flash (Chat)</option>
+      </select>
+    </div>
   </div>
 
-  <!-- MODE TABS -->
   <div class="mode-tabs">
-    <button class="mode-tab active" id="tabChat" onclick="switchMode('chat')">💬 CHAT</button>
-    <button class="mode-tab" id="tabVideo" onclick="switchMode('video')">🎬 VIDEO GEN <span class="tab-badge">VEO</span></button>
+    <div class="tab active" id="tabVideo" onclick="switchTab('video')">🎬 VEO_GEN ENGINE</div>
+    <div class="tab" id="tabChat" onclick="switchTab('chat')">💬 CHAT_TERMINAL</div>
   </div>
 
-  <!-- SYSTEM INSTRUCTIONS PANEL -->
-  <div id="sysPanel">
-
-    <!-- SECTION 1: DEFAULT PERSONA -->
-    <div class="sys-section">
-      <div class="sys-section-hdr">
-        <span class="sys-label">PERSONA DEFAULT</span>
-        <div style="display:flex;gap:6px;align-items:center">
-          <span id="defaultPersonaStatus" style="font-family:var(--font-mono);font-size:9px;color:var(--muted)">NO FILE LOADED</span>
-          <label class="upload-btn" for="fileUpload">⬆ UPLOAD .TXT</label>
-          <input type="file" id="fileUpload" accept=".txt" style="display:none" onchange="loadDefaultPersona(event)"/>
-          <button class="upload-btn" onclick="clearDefaultPersona()" style="color:#ff6070;border-color:#2a1020;" title="Remove default persona">✕</button>
-        </div>
-      </div>
-      <div class="default-persona-box empty-default" id="defaultPersonaBox" onclick="activatePersona('__default__')"
-           title="Click to use as active system prompt">
-        Upload a .txt file to set your Default Persona — it will auto-load every session.
-      </div>
+  <div id="videoPanel" class="main-panel active">
+    <div class="video-preview-wrap" id="videoPreview">
+      <div class="vid-placeholder">SYSTEM READY // ENGINE IDLE // Standby for video prompt input sequence...</div>
     </div>
-
-    <!-- SECTION 2: ACTIVE SYSTEM PROMPT EDITOR -->
-    <div class="sys-section">
-      <div class="active-label">ACTIVE PROMPT — <span id="activePersonaName">none</span></div>
-      <textarea id="sysInstructions" placeholder="Select a persona above, or type a custom system instruction here..."></textarea>
-    </div>
-
-    <!-- SECTION 3: SAVED PERSONAS -->
-    <div class="sys-section">
-      <div class="sys-section-hdr">
-        <span class="sys-label">SAVED PERSONAS</span>
-      </div>
-      <div class="persona-list" id="personaList">
-        <!-- chips rendered by JS -->
-      </div>
-      <!-- ADD NEW -->
-      <div class="add-persona-row">
-        <input type="text" id="newPersonaName" placeholder="persona name..." maxlength="32"/>
-        <button class="save-persona-btn" onclick="saveCurrentPersona()">💾 SAVE CURRENT PROMPT</button>
-      </div>
-    </div>
-
+    <textarea id="videoPrompt" placeholder="Deskripsikan video yang ingin di-generate. Contoh: Cinematic wide shot, cyberpunk city night view, rain reflecting neon lights on wet street, flying drone view, highly detailed, 8k resolution."></textarea>
+    <button class="gen-btn" id="genVideoBtn" onclick="generateVideo()">EXECUTE VEO GENERATION SEQUENCE</button>
   </div>
 
-
-
-  <!-- CHAT AREA -->
-  <div id="chatWrap">
-    <div id="emptyState">
-      <div class="big-icon">⬡</div>
-      <div class="big-label">TERMINAL READY</div>
-      <div class="big-sub">// Initialize query sequence to begin</div>
+  <div id="chatPanel" class="main-panel">
+    <div id="chatWrap">
+      <div class="vid-placeholder">// TERMINAL STANDBY FOR INSTRUCTIONS...</div>
     </div>
   </div>
 
-  <!-- VIDEO GENERATOR PANEL -->
-  <div id="videoPanel">
-    <div class="veo-config">
-      <div class="veo-config-row">
-        <span class="veo-label">ENDPOINT:</span>
-        <span style="font-family:var(--font-mono);font-size:11px;color:var(--accent);flex:1">
-          🔗 <span id="veoEndpointDisplay"></span>
-        </span>
-      </div>
-      <div class="veo-config-row">
-        <span class="veo-label">MODEL:</span>
-        <select id="veoModel">
-          <option value="gemini/veo-3.1-generate-preview" selected>veo-3.1-preview</option>
-          <option value="gemini/veo-3.0-generate-001">veo-3.0</option>
-          <option value="gemini/veo-2.0-generate-001">veo-2.0</option>
-        </select>
-        <span class="veo-label">DURASI:</span>
-        <select id="veoDuration">
-          <option value="5">5s</option>
-          <option value="8" selected>8s</option>
-          <option value="10">10s</option>
-          <option value="15">15s</option>
-        </select>
-        <span class="veo-label">RASIO:</span>
-        <select id="veoAspect">
-          <option value="16:9" selected>16:9</option>
-          <option value="9:16">9:16</option>
-          <option value="1:1">1:1</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="veo-prompt-wrap">
-      <textarea id="veoPrompt" placeholder="Deskripsikan video yang ingin di-generate...
-Contoh: A cinematic drone shot flying over a neon-lit cyberpunk city at night, rain reflecting lights on wet streets, ultra detailed"></textarea>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <button class="veo-generate-btn" id="veoBtn" onclick="generateVideo()">⬡ GENERATE VIDEO</button>
-        <span style="font-family:var(--font-mono);font-size:10px;color:var(--muted)">Via /chat/completions · API KEY dari atas</span>
-      </div>
-    </div>
-
-    <div id="veoResultArea" style="display:none" class="veo-result-area">
-      <div class="veo-result-head">
-        <span id="veoResultLabel">// OUTPUT</span>
-        <a id="veoDownload" class="veo-dl-btn" download="cybermind_video.mp4">⬇ DOWNLOAD</a>
-      </div>
-      <div id="veoVideoWrap"></div>
-    </div>
-
-    <div id="veoHistory" class="veo-history"></div>
+  <div class="input-row" id="commonInput" style="display:none;">
+    <textarea id="userInput" placeholder="Enter command or query..."></textarea>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">SEND</button>
   </div>
-
-  <!-- INPUT ROW -->
-  <div class="input-row">
-    <!-- Image attach button -->
-    <button class="attach-btn" id="attachBtn" onclick="document.getElementById('imgInput').click()" title="Attach image">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
-        <polyline points="21 15 16 10 5 21"/>
-      </svg>
-    </button>
-    <input type="file" id="imgInput" accept="image/*" multiple style="display:none" onchange="handleImageAttach(event)"/>
-
-    <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
-      <div id="attachPreview"></div>
-      <textarea id="userInput" placeholder="Enter command or query..." onkeydown="handleKey(event)" oninput="autoResize(this);updateCharCount(this)"></textarea>
-      <div id="charCount" style="font-family:var(--font-mono);font-size:9px;color:var(--muted);text-align:right;padding-right:2px;">0 / 4000</div>
-    </div>
-    <button class="clear-btn" onclick="clearChat()" title="Clear chat">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
-      </svg>
-    </button>
-    <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="Send (Enter)">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-      </svg>
-    </button>
-  </div>
-
-  <div class="footer">[ CYBERMIND AI // TRAFFIC ENCRYPTED // POWERED BY LITELLM ]</div>
 </div>
 
-<div id="historyOverlay" onclick="toggleHistory()"></div>
-<div id="historyDrawer">
-  <div class="hist-head">
-    <span class="hist-title">// SESSIONS</span>
-    <button class="hist-close" onclick="toggleHistory()">✕ CLOSE</button>
-  </div>
-  <div class="hist-actions">
-    <button class="hist-btn hist-btn-new" onclick="newSession()">+ NEW</button>
-    <button class="hist-btn hist-btn-save" onclick="saveCurrentSession()">💾 SAVE</button>
-    <button class="hist-btn hist-btn-del" onclick="clearAllHistory()">🗑 CLEAR ALL</button>
-  </div>
-  <div class="hist-search">
-    <input type="text" id="sessSearch" placeholder="Search sessions..." oninput="renderSessionList()"/>
-  </div>
-  <div id="sessionList"></div>
-  <div class="hist-footer" id="histFooter">0 sessions</div>
-</div>
-<div id="toast"></div>
 <script>
+  // ══════════════════════════════════════════
+  // LOGIKA INTEGRASI VEO 3.1 (SINGKRON COLAB)
+  // ══════════════════════════════════════════
   const API_URL = "https://litellm.koboi2026.biz.id/v1/chat/completions";
-  let messages = [];
+  let chatMessages = [];
 
-  // ── Security config ──────────────────────────────────────────
-  const SEC = {
-    MAX_INPUT_CHARS:  4000,   // max chars per user message
-    MAX_HISTORY_MSGS: 50,     // max messages kept in context window
-    RATE_LIMIT_MS:    2000,   // min ms between sends (anti-spam)
-    MAX_SYS_CHARS:    8000,   // max system prompt length
-  };
-  let lastSendTime = 0;
+  // Sinkronisasi Waktu
+  setInterval(() => {
+    document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+  }, 1000);
 
-  // ── Storage keys ────────────────────────────────────────────
-  const LS_DEFAULT  = 'cm_default_persona';
-  const LS_PERSONAS = 'cm_personas';
-  const LS_APIKEY   = 'cm_apikey';
-
-  // ── State ───────────────────────────────────────────────────
-  let defaultPersonaContent = '';
-  let activePersonaKey = null;
-  let activeSystemPrompt = ''; // source of truth for system prompt
-
-  // ── Init ────────────────────────────────────────────────────
-  window.addEventListener('DOMContentLoaded', () => {
-    // restore API key
-    const saved = localStorage.getItem(LS_APIKEY);
-    if (saved) document.getElementById('apiKey').value = saved;
-    document.getElementById('apiKey').addEventListener('input', function() {
-      localStorage.setItem(LS_APIKEY, this.value);
-    });
-
-    // restore default persona
-    const dp = localStorage.getItem(LS_DEFAULT);
-    if (dp) setDefaultPersona(dp, 'SAVED FILE');
-
-    // render persona chips
-    renderPersonaList();
-
-    // sync activeSystemPrompt whenever textarea is edited manually
-    document.getElementById('sysInstructions').addEventListener('input', function() {
-      activeSystemPrompt = this.value.trim();
-      updateSysIndicator();
-    });
-
-    // Restore last session
-    restoreLastSession();
-  });
-
-  // ── Clock ───────────────────────────────────────────────────
-  function updateClock() {
-    const now = new Date();
-    document.getElementById('clock').textContent =
-      now.toTimeString().split(' ')[0];
-  }
-  updateClock(); setInterval(updateClock, 1000);
-
-  // ── Model ───────────────────────────────────────────────────
-  document.getElementById('model').addEventListener('change', function() {
-    document.getElementById('customModel').style.display =
-      this.value === 'custom' ? 'inline-block' : 'none';
-  });
-
-  function getModel() {
-    const sel = document.getElementById('model').value;
-    if (sel === 'custom') {
-      return document.getElementById('customModel').value.trim() || 'vertex_ai/deepseek-ai/deepseek-v3.2-maas';
-    }
-    return sel;
+  // Ganti Tab & Sinkronisasi Input UI
+  function switchTab(mode) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.main-panel').forEach(p => p.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById(mode + 'Panel').classList.add('active');
+    
+    // Sembunyikan input chat jika di tab video
+    document.getElementById('commonInput').style.display = (mode === 'video') ? 'none' : 'flex';
   }
 
-  function updateSysIndicator() {
-    const btn = document.getElementById('toggleSys');
-    if (activeSystemPrompt.trim()) {
-      btn.style.borderColor = 'var(--accent)';
-      btn.style.color = 'var(--accent)';
-      btn.style.boxShadow = 'var(--glow)';
-    } else {
-      btn.style.borderColor = '';
-      btn.style.color = '';
-      btn.style.boxShadow = '';
-    }
-  }
-
-  // ── System Panel toggle ─────────────────────────────────────
-  function toggleSysPanel() {
-    const panel = document.getElementById('sysPanel');
-    const btn   = document.getElementById('toggleSys');
-    panel.classList.toggle('open');
-    btn.classList.toggle('active');
-  }
-
-  // ── Default Persona (file upload) ───────────────────────────
-  function loadDefaultPersona(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-      const content = e.target.result.trim();
-      setDefaultPersona(content, file.name);
-      localStorage.setItem(LS_DEFAULT, content);
-      showToast(`✔ Default persona loaded: ${file.name}`);
-    };
-    reader.readAsText(file);
-    // reset input so same file can be re-uploaded
-    event.target.value = '';
-  }
-
-  function setDefaultPersona(content, label) {
-    defaultPersonaContent = content;
-    const box = document.getElementById('defaultPersonaBox');
-    const status = document.getElementById('defaultPersonaStatus');
-    box.textContent = content;
-    box.classList.remove('empty-default');
-    status.textContent = label || 'LOADED';
-    status.style.color = '#00ff88';
-    // auto-activate if nothing else is active
-    if (!activePersonaKey) activatePersona('__default__');
-    else renderPersonaList(); // refresh chips
-  }
-
-  function clearDefaultPersona() {
-    defaultPersonaContent = '';
-    localStorage.removeItem(LS_DEFAULT);
-    const box = document.getElementById('defaultPersonaBox');
-    const status = document.getElementById('defaultPersonaStatus');
-    box.textContent = 'Upload a .txt file to set your Default Persona — it will auto-load every session.';
-    box.classList.add('empty-default');
-    status.textContent = 'NO FILE LOADED';
-    status.style.color = '';
-    if (activePersonaKey === '__default__') {
-      activePersonaKey = null;
-      document.getElementById('activePersonaName').textContent = 'none';
-      document.getElementById('sysInstructions').value = '';
-    }
-    renderPersonaList();
-    showToast('Default persona cleared');
-  }
-
-  // ── Activate a persona ──────────────────────────────────────
-  function activatePersona(key) {
-    let content = '';
-    if (key === '__default__') {
-      if (!defaultPersonaContent) return;
-      content = defaultPersonaContent;
-      document.getElementById('activePersonaName').textContent = 'DEFAULT';
-    } else {
-      const personas = getPersonas();
-      const p = personas.find(x => x.name === key);
-      if (!p) return;
-      content = p.content;
-      document.getElementById('activePersonaName').textContent = key.toUpperCase();
-    }
-    activePersonaKey = key;
-    document.getElementById('sysInstructions').value = content;
-    activeSystemPrompt = content;
-    updateSysIndicator();
-
-    // update default box highlight
-    const box = document.getElementById('defaultPersonaBox');
-    box.classList.toggle('active-persona', key === '__default__');
-
-    renderPersonaList();
-  }
-
-  // ── Saved Personas (localStorage) ───────────────────────────
-  function getPersonas() {
-    try { return JSON.parse(localStorage.getItem(LS_PERSONAS) || '[]'); }
-    catch { return []; }
-  }
-
-  function savePersonas(arr) {
-    localStorage.setItem(LS_PERSONAS, JSON.stringify(arr));
-  }
-
-  function saveCurrentPersona() {
-    const name = document.getElementById('newPersonaName').value.trim();
-    const content = document.getElementById('sysInstructions').value.trim();
-    if (!name) { showToast('⚠ Enter a persona name first'); return; }
-    if (!content) { showToast('⚠ Active prompt is empty'); return; }
-
-    const personas = getPersonas();
-    const existing = personas.findIndex(p => p.name === name);
-    if (existing >= 0) {
-      personas[existing].content = content;
-      showToast(`✔ Updated: ${name}`);
-    } else {
-      personas.push({ name, content });
-      showToast(`✔ Saved: ${name}`);
-    }
-    savePersonas(personas);
-    document.getElementById('newPersonaName').value = '';
-    activePersonaKey = name;
-    document.getElementById('activePersonaName').textContent = name.toUpperCase();
-    renderPersonaList();
-  }
-
-  function deletePersona(name) {
-    const personas = getPersonas().filter(p => p.name !== name);
-    savePersonas(personas);
-    if (activePersonaKey === name) {
-      activePersonaKey = null;
-      document.getElementById('activePersonaName').textContent = 'none';
-      document.getElementById('sysInstructions').value = '';
-    }
-    renderPersonaList();
-  }
-
-  function renderPersonaList() {
-    const list = document.getElementById('personaList');
-    const personas = getPersonas();
-
-    // Built-in presets
-    const BUILTIN = [
-      { name: '⚔ Pentest',  key: 'pentest' },
-      { name: '🛡 SOC',     key: 'soc'     },
-      { name: '🦠 Malware', key: 'malware' },
-      { name: '🚩 CTF',     key: 'ctf'     },
-      { name: '🔒 OPSEC',   key: 'opsec'   },
-    ];
-
-    list.innerHTML = '';
-
-    // Built-in chips
-    BUILTIN.forEach(b => {
-      const chip = document.createElement('button');
-      chip.className = 'persona-chip' + (activePersonaKey === b.key ? ' active-chip' : '');
-      chip.textContent = b.name;
-      chip.onclick = () => activateBuiltin(b.key, b.name);
-      list.appendChild(chip);
-    });
-
-    // Saved custom chips
-    personas.forEach(p => {
-      const chip = document.createElement('div');
-      chip.className = 'persona-chip' + (activePersonaKey === p.name ? ' active-chip' : '');
-      chip.innerHTML = `<span onclick="activatePersona('${escHtml(p.name)}')" style="cursor:pointer">${escHtml(p.name)}</span>
-        <button class="chip-del" onclick="deletePersona('${escHtml(p.name)}')" title="Delete">✕</button>`;
-      list.appendChild(chip);
-    });
-
-    // Clear chip
-    const clr = document.createElement('button');
-    clr.className = 'persona-chip';
-    clr.style.color = '#ff6070';
-    clr.textContent = '✕ clear';
-    clr.onclick = () => {
-      activePersonaKey = null;
-      activeSystemPrompt = '';
-      document.getElementById('sysInstructions').value = '';
-      document.getElementById('activePersonaName').textContent = 'none';
-      document.getElementById('defaultPersonaBox').classList.remove('active-persona');
-      updateSysIndicator();
-      renderPersonaList();
-    };
-    list.appendChild(clr);
-  }
-
-  // Built-in preset content
-  const BUILTIN_CONTENT = {
-    pentest: `You are an elite penetration tester and red team specialist with 15+ years of experience. Provide precise, technical guidance on offensive security techniques, vulnerability assessment, and ethical hacking methodologies. Always note legal and ethical considerations.`,
-    soc:     `You are a Senior SOC (Security Operations Center) Analyst. Assist with threat detection, incident response, log analysis, SIEM queries, and defensive security measures. Provide concise, actionable intelligence using industry-standard frameworks like MITRE ATT&CK.`,
-    malware: `You are a malware analyst and reverse engineer. Help analyze suspicious code, binaries, and indicators of compromise. Explain malware behavior, persistence mechanisms, and C2 communication patterns. Use technical terminology and reference CVEs where relevant.`,
-    ctf:     `You are an expert CTF (Capture The Flag) coach specializing in all categories: web exploitation, pwn, crypto, forensics, reverse engineering, and OSINT. Guide the user through challenges step-by-step using hints before full solutions.`,
-    opsec:   `You are an operational security (OPSEC) specialist. Provide guidance on anonymity, privacy, threat modeling, secure communications, and digital footprint reduction. Assume the user has legitimate privacy concerns.`,
-  };
-
-  function activateBuiltin(key, label) {
-    activePersonaKey = key;
-    document.getElementById('sysInstructions').value = BUILTIN_CONTENT[key];
-    activeSystemPrompt = BUILTIN_CONTENT[key];
-    document.getElementById('activePersonaName').textContent = label.replace(/^[^\s]+\s/, '').toUpperCase();
-    document.getElementById('defaultPersonaBox').classList.remove('active-persona');
-    updateSysIndicator();
-    renderPersonaList();
-  }
-
-  function escHtml(str) {
-    return str.replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
-  }
-
-  // ── Chat ─────────────────────────────────────────────────────
-  function getTimestamp() {
-    return new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  }
-
-  function renderMessage(role, text, isThinking = false) {
-    const wrap = document.getElementById('chatWrap');
-    const empty = document.getElementById('emptyState');
-    if (empty) empty.remove();
-
-    const id = 'msg-' + Date.now() + '-' + Math.random().toString(36).slice(2);
-    const isUser = role === 'user';
-
-    const div = document.createElement('div');
-    div.className = `msg ${isUser ? 'user' : 'bot'}`;
-    div.id = id;
-
-    const avatar = isUser ? 'YOU' : 'AI';
-    const name   = isUser ? 'OPERATOR' : 'CYBERMIND';
-
-    div.innerHTML = `
-      <div class="msg-avatar">${avatar}</div>
-      <div class="msg-body">
-        <div class="msg-meta">
-          <span class="msg-name">${name}</span>
-          <span class="msg-time">${getTimestamp()}</span>
-        </div>
-        <div class="msg-text" id="text-${id}">${
-          isThinking
-            ? '<span class="thinking-dots"><span>.</span><span>.</span><span>.</span></span>'
-            : formatText(text)
-        }</div>
-        ${!isUser && !isThinking ? `<div class="msg-actions"><button class="msg-action-btn" id="copymsg-${id}" onclick="copyMsg('${id}')">⎘ COPY MSG</button></div>` : ''}
-      </div>`;
-
-    wrap.appendChild(div);
-    wrap.scrollTop = wrap.scrollHeight;
-    return id;
-  }
-
-  function escapeHtmlRaw(str) {
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  }
-
-  function formatText(raw) {
-    const codeBlocks  = [];
-    const inlineCodes = [];
-    const PH_BLOCK  = s => `\x02BLOCK${s}\x03`;
-    const PH_INLINE = s => `\x02INLINE${s}\x03`;
-
-    // 1. Extract fenced code blocks (``` ... ```)
-    let text = raw.replace(/```(\w*)\r?\n?([\s\S]*?)```/g, (_, lang, code) => {
-      const idx = codeBlocks.length;
-      const escapedCode = escapeHtmlRaw(code.replace(/^\n|\n$/g,''));
-      const rawForCopy  = code.replace(/^\n|\n$/g,'').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n');
-      const langLabel   = lang ? `<span class="pre-lang">${escapeHtmlRaw(lang.toUpperCase())}</span>` : '<span></span>';
-      codeBlocks.push(`<div class="code-wrap"><div class="pre-header">${langLabel}<button class="copy-btn" onclick="copyCode(this, '${rawForCopy}')">COPY</button></div><pre><code>${escapedCode}</code></pre></div>`);
-      return PH_BLOCK(idx);
-    });
-
-    // 2. Extract inline code (` ... `)
-    text = text.replace(/`([^`\n]+)`/g, (_, code) => {
-      const idx = inlineCodes.length;
-      inlineCodes.push(`<code>${escapeHtmlRaw(code)}</code>`);
-      return PH_INLINE(idx);
-    });
-
-    // 3. Escape all remaining HTML
-    text = escapeHtmlRaw(text);
-
-    // 4. Safe markdown: bold, italic, newlines
-    text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    text = text.replace(/\n/g, '<br>');
-
-    // 5. Restore placeholders (they survived escaping as-is since they're control chars)
-    text = text.replace(/\x02BLOCK(\d+)\x03/g,  (_, i) => codeBlocks[i]);
-    text = text.replace(/\x02INLINE(\d+)\x03/g, (_, i) => inlineCodes[i]);
-
-    return text;
-  }
-
-  function updateMessage(id, text) {
-    const el = document.getElementById('text-' + id);
-    if (el) {
-      el.innerHTML = formatText(text);
-      document.getElementById('chatWrap').scrollTop = document.getElementById('chatWrap').scrollHeight;
-    }
-  }
-
-  function showToast(msg, duration = 3000) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.style.display = 'block';
-    setTimeout(() => t.style.display = 'none', duration);
-  }
-
-  // ── Input validation helpers ─────────────────────────────────
-  function validateApiKey(key) {
-    // Must be non-empty, reasonable length, no whitespace
-    if (!key) return 'API KEY kosong';
-    if (key.length < 8) return 'API KEY terlalu pendek';
-    if (key.length > 512) return 'API KEY terlalu panjang';
-    if (/\s/.test(key)) return 'API KEY tidak boleh mengandung spasi';
-    return null; // valid
-  }
-
-  function sanitizeInput(text) {
-    // Trim, collapse excessive newlines, enforce max length
-    return text.trim().replace(/\n{5,}/g, '\n\n\n').slice(0, SEC.MAX_INPUT_CHARS);
-  }
-
-  function trimHistory() {
-    // Keep only last N messages to prevent context bloat
-    if (messages.length > SEC.MAX_HISTORY_MSGS) {
-      messages = messages.slice(-SEC.MAX_HISTORY_MSGS);
-    }
-  }
-
-  async function sendMessage() {
-    const input   = document.getElementById('userInput');
-    const apiKey  = document.getElementById('apiKey').value.trim();
-    const rawText = input.value;
-    // Read from JS variable (not textarea which may be in display:none panel)
-    const sysText = activeSystemPrompt.slice(0, SEC.MAX_SYS_CHARS);
-
-    // ── Rate limiting ──────────────────────────────────────────
-    const now = Date.now();
-    if (now - lastSendTime < SEC.RATE_LIMIT_MS) {
-      showToast(`⏳ Tunggu ${((SEC.RATE_LIMIT_MS - (now - lastSendTime)) / 1000).toFixed(1)}s`);
-      return;
-    }
-
-    // ── Input checks ───────────────────────────────────────────
-    const text = sanitizeInput(rawText);
-    if (!text) return;
-
-    const keyErr = validateApiKey(apiKey);
-    if (keyErr) { showToast(`⚠ ${keyErr}`); return; }
-
-    // Warn if message was truncated
-    if (rawText.trim().length > SEC.MAX_INPUT_CHARS) {
-      showToast(`⚠ Pesan dipotong ke ${SEC.MAX_INPUT_CHARS} karakter`, 4000);
-    }
-
-    // ── Commit ─────────────────────────────────────────────────
-    lastSendTime = now;
-    document.getElementById('sendBtn').disabled = true;
-    input.value = '';
-    input.style.height = '44px';
-
-    const userContent = buildUserContent(text);
-    const sentImages  = [...attachedImages];
-    attachedImages = [];
-    renderAttachPreview();
-
-    messages.push({ role: 'user', content: userContent });
-    trimHistory();
-
-    // Render user bubble with images
-    const uid = 'msg-' + Date.now() + '-' + Math.random().toString(36).slice(2);
-    const udiv = document.createElement('div');
-    udiv.className = 'msg user';
-    udiv.id = uid;
-    udiv.innerHTML = `
-      <div class="msg-avatar">YOU</div>
-      <div class="msg-body">
-        <div class="msg-meta"><span class="msg-name">OPERATOR</span><span class="msg-time">${getTimestamp()}</span></div>
-        <div class="msg-text" id="text-${uid}">${escapeHtmlRaw(text)}${renderImagesInBubble(sentImages)}</div>
-      </div>`;
-    const wrap = document.getElementById('chatWrap');
-    const empty = document.getElementById('emptyState');
-    if (empty) empty.remove();
-    wrap.appendChild(udiv);
-    wrap.scrollTop = wrap.scrollHeight;
-
-    const botId = renderMessage('bot', '', true);
-
-    const payload = {
-      model: getModel(),
-      messages: [
-        ...(sysText ? [{ role: 'system', content: sysText }] : []),
-        ...messages
-      ],
-      stream: true
-    };
-
-    try {
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-          'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: { message: res.statusText } }));
-        throw new Error(err.error?.message || `HTTP ${res.status}`);
-      }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let full = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n').filter(l => l.startsWith('data: '));
-        for (const line of lines) {
-          const data = line.slice(6).trim();
-          if (data === '[DONE]') break;
-          try {
-            const json = JSON.parse(data);
-            const delta = json.choices?.[0]?.delta?.content || '';
-            full += delta;
-            updateMessage(botId, full);
-          } catch {}
-        }
-      }
-
-      messages.push({ role: 'assistant', content: full });
-      addCopyActionToMsg(botId);
-      autoSave(); // persist after every response
-
-    } catch (err) {
-      // Don't expose raw error details that could leak info
-      const safeMsg = err.message.length > 200 ? err.message.slice(0, 200) + '…' : err.message;
-      updateMessage(botId, `⚠ ERROR: ${escapeHtmlRaw(safeMsg)}`);
-      messages.pop();
-    }
-
-    document.getElementById('sendBtn').disabled = false;
-    input.focus();
-  }
-
-
-  // ══════════════════════════════════════════
-  // SESSION HISTORY SYSTEM (localStorage)
-  // ══════════════════════════════════════════
-  const LS_SESSIONS   = 'cm_sessions';
-  const LS_ACTIVE_SID = 'cm_active_sid';
-  const MAX_SESSIONS  = 50;
-  let currentSessionId = null;
-
-  function genId() {
-    return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-  }
-
-  function getSessions() {
-    try { return JSON.parse(localStorage.getItem(LS_SESSIONS) || '[]'); }
-    catch { return []; }
-  }
-
-  function saveSessions(arr) {
-    // Keep max sessions, newest first
-    const trimmed = arr.slice(0, MAX_SESSIONS);
-    localStorage.setItem(LS_SESSIONS, JSON.stringify(trimmed));
-  }
-
-  function getSessionTitle(msgs) {
-    // Use first user message as title
-    const first = msgs.find(m => m.role === 'user');
-    if (!first) return 'New Session';
-    return first.content.slice(0, 48) + (first.content.length > 48 ? '…' : '');
-  }
-
-  function formatRelTime(ts) {
-    const diff = Date.now() - ts;
-    if (diff < 60000)   return 'just now';
-    if (diff < 3600000) return Math.floor(diff/60000) + 'm ago';
-    if (diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
-    return new Date(ts).toLocaleDateString();
-  }
-
-  // Auto-save after every AI response
-  function autoSave() {
-    if (messages.length === 0) return;
-    const sessions = getSessions();
-    const idx = sessions.findIndex(s => s.id === currentSessionId);
-    const entry = {
-      id:        currentSessionId || (currentSessionId = genId()),
-      title:     getSessionTitle(messages),
-      messages:  messages,
-      model:     getModel(),
-      sysPrompt: activeSystemPrompt,
-      updatedAt: Date.now(),
-      createdAt: idx >= 0 ? sessions[idx].createdAt : Date.now(),
-    };
-    if (idx >= 0) sessions[idx] = entry;
-    else sessions.unshift(entry);
-    saveSessions(sessions);
-    localStorage.setItem(LS_ACTIVE_SID, currentSessionId);
-    renderSessionList();
-  }
-
-  function saveCurrentSession() {
-    if (messages.length === 0) { showToast('⚠ Tidak ada pesan untuk disimpan'); return; }
-    autoSave();
-    showToast('✔ Session tersimpan');
-  }
-
-  function loadSession(id) {
-    const sessions = getSessions();
-    const sess = sessions.find(s => s.id === id);
-    if (!sess) return;
-
-    // Save current before switching if has messages
-    if (messages.length > 0 && currentSessionId !== id) autoSave();
-
-    currentSessionId = id;
-    messages = sess.messages || [];
-    localStorage.setItem(LS_ACTIVE_SID, id);
-
-    // Restore model if saved
-    if (sess.model) {
-      const sel = document.getElementById('model');
-      const opt = [...sel.options].find(o => o.value === sess.model);
-      if (opt) sel.value = sess.model;
-      else {
-        sel.value = 'custom';
-        document.getElementById('customModel').value = sess.model;
-        document.getElementById('customModel').style.display = 'inline-block';
-      }
-    }
-
-    // Restore system prompt if saved
-    if (sess.sysPrompt) {
-      activeSystemPrompt = sess.sysPrompt;
-      document.getElementById('sysInstructions').value = sess.sysPrompt;
-      document.getElementById('activePersonaName').textContent = 'RESTORED';
-      updateSysIndicator();
-    }
-
-    // Re-render chat
-    rebuildChatUI();
-    renderSessionList();
-    toggleHistory();
-    showToast(`✔ Session dimuat: ${sess.title.slice(0,30)}`);
-  }
-
-  function rebuildChatUI() {
-    const wrap = document.getElementById('chatWrap');
-    if (messages.length === 0) {
-      wrap.innerHTML = `<div id="emptyState">
-        <div class="big-icon">⬡</div>
-        <div class="big-label">TERMINAL READY</div>
-        <div class="big-sub">// Initialize query sequence to begin</div>
-      </div>`;
-      return;
-    }
-    wrap.innerHTML = '';
-    messages.forEach((m, i) => {
-      const isUser = m.role === 'user';
-      const id = 'hist-msg-' + i;
-      const avatar = isUser ? 'YOU' : 'AI';
-      const name   = isUser ? 'OPERATOR' : 'CYBERMIND';
-      const div = document.createElement('div');
-      div.className = `msg ${isUser ? 'user' : 'bot'}`;
-      div.id = id;
-      div.innerHTML = `
-        <div class="msg-avatar">${avatar}</div>
-        <div class="msg-body">
-          <div class="msg-meta">
-            <span class="msg-name">${name}</span>
-          </div>
-          <div class="msg-text" id="text-${id}">${formatText(m.content)}</div>
-          ${!isUser ? `<div class="msg-actions"><button class="msg-action-btn" id="copymsg-${id}" onclick="copyMsg('${id}')">⎘ COPY MSG</button></div>` : ''}
-        </div>`;
-      wrap.appendChild(div);
-    });
-    wrap.scrollTop = wrap.scrollHeight;
-  }
-
-  function deleteSession(id, e) {
-    e.stopPropagation();
-    const sessions = getSessions().filter(s => s.id !== id);
-    saveSessions(sessions);
-    if (currentSessionId === id) {
-      currentSessionId = null;
-      messages = [];
-      rebuildChatUI();
-    }
-    renderSessionList();
-    showToast('Session dihapus');
-  }
-
-  function newSession() {
-    if (messages.length > 0) autoSave();
-    currentSessionId = genId();
-    messages = [];
-    rebuildChatUI();
-    renderSessionList();
-    toggleHistory();
-    showToast('✔ Session baru dimulai');
-  }
-
-  function clearAllHistory() {
-    if (!confirm('Hapus semua session history?')) return;
-    localStorage.removeItem(LS_SESSIONS);
-    localStorage.removeItem(LS_ACTIVE_SID);
-    currentSessionId = null;
-    messages = [];
-    rebuildChatUI();
-    renderSessionList();
-    showToast('🗑 Semua history dihapus');
-  }
-
-  function renderSessionList() {
-    const list = document.getElementById('sessionList');
-    const footer = document.getElementById('histFooter');
-    const q = (document.getElementById('sessSearch')?.value || '').toLowerCase();
-    let sessions = getSessions();
-    if (q) sessions = sessions.filter(s => s.title.toLowerCase().includes(q));
-
-    footer.textContent = `${getSessions().length} session${getSessions().length !== 1 ? 's' : ''} tersimpan`;
-
-    if (sessions.length === 0) {
-      list.innerHTML = `<div class="hist-empty">${q ? 'Tidak ada hasil' : 'Belum ada session tersimpan.<br>Mulai chat lalu tekan 💾 SAVE'}</div>`;
-      return;
-    }
-
-    list.innerHTML = sessions.map(s => `
-      <div class="sess-item ${s.id === currentSessionId ? 'active-sess' : ''}" onclick="loadSession('${s.id}')">
-        <div class="sess-main">
-          <div class="sess-title">${escapeHtmlRaw(s.title)}</div>
-          <div class="sess-meta">${s.messages.length} msg · ${s.model ? escapeHtmlRaw(s.model.split('/').pop()) : '?'} · ${formatRelTime(s.updatedAt)}</div>
-        </div>
-        <button class="sess-del" onclick="deleteSession('${s.id}', event)" title="Hapus">✕</button>
-      </div>`).join('');
-  }
-
-  function toggleHistory() {
-    const drawer = document.getElementById('historyDrawer');
-    const overlay = document.getElementById('historyOverlay');
-    const isOpen = drawer.classList.contains('open');
-    drawer.classList.toggle('open');
-    overlay.classList.toggle('open');
-    if (!isOpen) {
-      renderSessionList();
-      document.getElementById('sessSearch').value = '';
-    }
-  }
-
-  // Restore last active session on load
-  function restoreLastSession() {
-    const lastId = localStorage.getItem(LS_ACTIVE_SID);
-    if (!lastId) return;
-    const sessions = getSessions();
-    const sess = sessions.find(s => s.id === lastId);
-    if (!sess || sess.messages.length === 0) return;
-    currentSessionId = lastId;
-    messages = sess.messages;
-    if (sess.sysPrompt) {
-      activeSystemPrompt = sess.sysPrompt;
-      document.getElementById('sysInstructions').value = sess.sysPrompt;
-      document.getElementById('activePersonaName').textContent = 'RESTORED';
-      updateSysIndicator();
-    }
-    if (sess.model) {
-      const sel = document.getElementById('model');
-      const opt = [...sel.options].find(o => o.value === sess.model);
-      if (opt) sel.value = sess.model;
-    }
-    rebuildChatUI();
-    showToast(`↺ Session terakhir dipulihkan`, 2500);
-  }
-  // ══════════════════════════════════════════
-
-  function clearChat() {
-    if (messages.length > 0) autoSave(); // save before clearing
-    currentSessionId = genId(); // new session id for next chat
-    messages = [];
-    document.getElementById('chatWrap').innerHTML = `
-      <div id="emptyState">
-        <div class="big-icon">⬡</div>
-        <div class="big-label">TERMINAL READY</div>
-        <div class="big-sub">// Initialize query sequence to begin</div>
-      </div>`;
-  }
-
-  function handleKey(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  }
-
-  function copyMsg(id) {
-    const el  = document.getElementById('text-' + id);
-    const btn = document.getElementById('copymsg-' + id);
-    if (!el || !btn) return;
-    const text = el.innerText || el.textContent;
-    navigator.clipboard.writeText(text).then(() => {
-      btn.textContent = '✔ COPIED';
-      btn.classList.add('copied');
-      setTimeout(() => { btn.textContent = '⎘ COPY MSG'; btn.classList.remove('copied'); }, 2000);
-    }).catch(() => {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed'; ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.select(); document.execCommand('copy');
-      document.body.removeChild(ta);
-      btn.textContent = '✔ COPIED';
-      btn.classList.add('copied');
-      setTimeout(() => { btn.textContent = '⎘ COPY MSG'; btn.classList.remove('copied'); }, 2000);
-    });
-  }
-
-  function addCopyActionToMsg(id) {
-    // After streaming done, insert copy button if not already there
-    const body = document.querySelector(`#${id} .msg-body`);
-    if (!body || body.querySelector('.msg-actions')) return;
-    const actions = document.createElement('div');
-    actions.className = 'msg-actions';
-    actions.innerHTML = `<button class="msg-action-btn" id="copymsg-${id}" onclick="copyMsg('${id}')">⎘ COPY MSG</button>`;
-    body.appendChild(actions);
-  }
-
-  function copyCode(btn, escaped) {
-    const text = escaped.replace(/\\n/g, '\n').replace(/\\'/g, "'").replace(/\\\\/g, '\\');
-    navigator.clipboard.writeText(text).then(() => {
-      btn.textContent = 'COPIED!';
-      btn.classList.add('copied');
-      setTimeout(() => { btn.textContent = 'COPY'; btn.classList.remove('copied'); }, 2000);
-    }).catch(() => {
-      // Fallback for browsers without clipboard API
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed'; ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.select(); document.execCommand('copy');
-      document.body.removeChild(ta);
-      btn.textContent = 'COPIED!';
-      btn.classList.add('copied');
-      setTimeout(() => { btn.textContent = 'COPY'; btn.classList.remove('copied'); }, 2000);
-    });
-  }
-
-  // ══════════════════════════════════════════
-  // MODE SWITCHING
-  // ══════════════════════════════════════════
-  let currentMode = 'chat';
-
-  function switchMode(mode) {
-    currentMode = mode;
-    const app = document.getElementById('app');
-    const chatTab  = document.getElementById('tabChat');
-    const videoTab = document.getElementById('tabVideo');
-    const sysBtn   = document.getElementById('toggleSys');
-
-    if (mode === 'video') {
-      app.classList.remove('chat-mode');
-      app.classList.add('video-mode');
-      document.getElementById('videoPanel').classList.add('active');
-      chatTab.classList.remove('active');
-      videoTab.classList.add('active');
-      // Hide system prompt button (not relevant for video)
-      sysBtn.style.display = 'none';
-      // Close sys panel if open
-      document.getElementById('sysPanel').classList.remove('open');
-    } else {
-      app.classList.remove('video-mode');
-      app.classList.add('chat-mode');
-      document.getElementById('videoPanel').classList.remove('active');
-      chatTab.classList.add('active');
-      videoTab.classList.remove('active');
-      sysBtn.style.display = '';
-    }
-  }
-
-  // Init with chat-mode class
-  document.getElementById('app').classList.add('chat-mode');
-
-  // ══════════════════════════════════════════
-  // IMAGE ATTACH (for vision models)
-  // ══════════════════════════════════════════
-  let attachedImages = []; // [{base64, mimeType, name}]
-
-  function handleImageAttach(event) {
-    const files = [...event.target.files];
-    if (!files.length) return;
-
-    const VISION_MODELS = ['gpt-4o','gpt-4o-mini','gpt-4.1','gpt-4.1-mini','gpt-5','gpt-5-mini',
-                           'claude-sonnet-4-5','claude-opus-4-5','gemini-2.0-flash'];
-    const model = getModel();
-    const isVision = VISION_MODELS.some(m => model.includes(m));
-    if (!isVision) {
-      showToast(`⚠ Model "${model}" tidak support gambar. Ganti ke gpt-4o / gemini / claude.`, 4000);
-      event.target.value = '';
-      return;
-    }
-
-    files.forEach(file => {
-      if (!file.type.startsWith('image/')) return;
-      if (attachedImages.length >= 4) { showToast('⚠ Max 4 gambar per pesan'); return; }
-      const reader = new FileReader();
-      reader.onload = e => {
-        const base64 = e.target.result.split(',')[1];
-        attachedImages.push({ base64, mimeType: file.type, name: file.name });
-        renderAttachPreview();
-      };
-      reader.readAsDataURL(file);
-    });
-    event.target.value = '';
-  }
-
-  function renderAttachPreview() {
-    const wrap = document.getElementById('attachPreview');
-    const btn  = document.getElementById('attachBtn');
-    wrap.innerHTML = '';
-    if (attachedImages.length === 0) {
-      wrap.classList.remove('has-img');
-      btn.classList.remove('has-img');
-      return;
-    }
-    wrap.classList.add('has-img');
-    btn.classList.add('has-img');
-    attachedImages.forEach((img, i) => {
-      const thumb = document.createElement('div');
-      thumb.className = 'attach-thumb';
-      thumb.innerHTML = `
-        <img src="data:${img.mimeType};base64,${img.base64}" alt="${escapeHtmlRaw(img.name)}"/>
-        <button class="attach-remove" onclick="removeImage(${i})">✕</button>`;
-      wrap.appendChild(thumb);
-    });
-  }
-
-  function removeImage(idx) {
-    attachedImages.splice(idx, 1);
-    renderAttachPreview();
-  }
-
-  // Build message content with images
-  function buildUserContent(text) {
-    if (attachedImages.length === 0) return text;
-    const content = [{ type: 'text', text }];
-    attachedImages.forEach(img => {
-      content.push({
-        type: 'image_url',
-        image_url: { url: `data:${img.mimeType};base64,${img.base64}` }
-      });
-    });
-    return content;
-  }
-
-  // Render image thumbnails inside chat bubble
-  function renderImagesInBubble(images) {
-    if (!images || images.length === 0) return '';
-    return images.map(img =>
-      `<img src="data:${img.mimeType};base64,${img.base64}" style="max-width:100%;max-height:200px;border-radius:3px;margin-top:6px;border:1px solid var(--dim)" alt="attached"/>`
-    ).join('');
-  }
-
-  // ══════════════════════════════════════════
-  // ══════════════════════════════════════════
-  // VIDEO GENERATOR (Veo via /chat/completions)
-  // ══════════════════════════════════════════
-  const LS_VEO_HISTORY = 'cm_veo_history';
-
-  // Show endpoint on panel load
-  window.addEventListener('DOMContentLoaded', () => {
-    const el = document.getElementById('veoEndpointDisplay');
-    if (el) el.textContent = API_URL;
-    renderVeoHistory();
-  }, { once: false });
-
+  // 1. FUNGSI GENERATE VIDEO (VEO INTEGRATION)
+  // Perbaikan total untuk menangani output non-streaming media
   async function generateVideo() {
-    const apiKey  = document.getElementById('apiKey').value.trim();
-    const model   = document.getElementById('veoModel').value;
-    const prompt  = document.getElementById('veoPrompt').value.trim();
-    const duration = parseInt(document.getElementById('veoDuration').value);
-    const aspect  = document.getElementById('veoAspect').value;
+    const prompt = document.getElementById('videoPrompt').value.trim();
+    const apiKey = document.getElementById('apiKey').value.trim();
+    const preview = document.getElementById('videoPreview');
+    const btn = document.getElementById('genVideoBtn');
+    const model = document.getElementById('model').value;
 
-    if (!apiKey) { showToast('⚠ API KEY kosong'); return; }
-    if (!prompt) { showToast('⚠ Prompt kosong'); return; }
+    if (!prompt || !apiKey) return alert("API Key dan Prompt Video wajib diisi!");
 
-    const btn = document.getElementById('veoBtn');
+    // UI Feedback: Loading
     btn.disabled = true;
-    btn.textContent = '⏳ GENERATING...';
-
-    const resultArea = document.getElementById('veoResultArea');
-    const videoWrap  = document.getElementById('veoVideoWrap');
-    resultArea.style.display = 'block';
-    videoWrap.innerHTML = `<div class="veo-loading"><div class="veo-spinner"></div>Mengirim ke ${model.split('/').pop()}...</div>`;
-    document.getElementById('veoResultLabel').textContent = '// GENERATING...';
-    document.getElementById('veoDownload').style.display = 'none';
-
-    // Kirim sebagai /chat/completions biasa
-    const payload = {
-      model,
-      messages: [
-        {
-          role: 'user',
-          content: `Generate a video: ${prompt}\nDuration: ${duration} seconds. Aspect ratio: ${aspect}.`
-        }
-      ],
-      stream: false,
-    };
+    btn.textContent = "GENERATING SEQUENCE...";
+    preview.innerHTML = `
+      <div class="vid-placeholder">
+        <span class="thinking-dots"><span>.</span><span>.</span><span>.</span></span><br>
+        RENDERING NEURAL FRAMES (VEO ENGINE ACTIVE) // System processing request sequence...
+      </div>`;
 
     try {
-      const res = await fetch(API_URL, {
+      // Periksa apakah model yang dipilih adalah Veo
+      if (!model.includes('veo')) {
+        throw new Error("Pilih model Veo yang valid untuk melakukan video generation.");
+      }
+
+      // Payload khusus untuk Veo (Non-Streaming)
+      const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          model: model, // Gunakan model Veo yang dipilih
+          messages: [
+            { 
+              role: "system", 
+              content: "You are the Veo video generation engine. Work with neural rendering sequence. Output the direct resulting video URL clearly in your response, preferably in markdown format like [Video](URL)." 
+            },
+            { role: "user", content: "Generate video: " + prompt }
+          ],
+          // Untuk output media, matikan streaming agar kita dapat respons lengkap
+          stream: false 
+        })
       });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: { message: res.statusText } }));
-        throw new Error(err.error?.message || `HTTP ${res.status}`);
-      }
+      const data = await response.json();
+      
+      // Deteksi error dari API (misal: API key salah)
+      if (data.error) throw new Error(data.error.message || "API Error.");
 
-      const data = await res.json();
+      const content = data.choices[0].message.content;
 
-      // Cari video URL dari berbagai kemungkinan format response
-      const videoUrl =
-        data?.choices?.[0]?.message?.content?.match(/https?:\/\/\S+\.mp4\S*/i)?.[0] ||
-        data?.data?.[0]?.url ||
-        data?.video_url ||
-        data?.url ||
-        data?.output_url ||
-        data?.generations?.[0]?.video?.url ||
-        null;
-
-      const rawContent = data?.choices?.[0]?.message?.content || '';
-
-      if (videoUrl) {
-        // Ada URL video langsung
-        videoWrap.innerHTML = `<video controls autoplay loop>
-          <source src="${escapeHtmlRaw(videoUrl)}" type="video/mp4">
-          <p style="padding:12px;font-family:var(--font-mono);font-size:11px">
-            Browser tidak bisa putar inline. <a href="${escapeHtmlRaw(videoUrl)}" target="_blank" style="color:var(--accent)">Buka di tab baru ↗</a>
-          </p>
-        </video>`;
-        document.getElementById('veoResultLabel').textContent = `// OUTPUT — ${model.split('/').pop()}`;
-        const dlBtn = document.getElementById('veoDownload');
-        dlBtn.href = videoUrl;
-        dlBtn.style.display = '';
-        saveVeoHistory({ prompt, model, videoUrl, aspect, duration, ts: Date.now() });
-        renderVeoHistory();
-        showToast('✔ Video berhasil di-generate!');
-
-      } else if (rawContent) {
-        // Response berupa teks (mungkin URL dalam teks atau deskripsi)
-        // Cari URL apapun dalam teks
-        const urlMatch = rawContent.match(/https?:\/\/[^\s"'<>]+/g);
-        if (urlMatch) {
-          const firstUrl = urlMatch[0];
-          const isVideo = /\.(mp4|webm|mov|avi)/i.test(firstUrl);
-          if (isVideo) {
-            videoWrap.innerHTML = `<video controls autoplay loop>
-              <source src="${escapeHtmlRaw(firstUrl)}" type="video/mp4">
-            </video>`;
-            document.getElementById('veoDownload').href = firstUrl;
-            document.getElementById('veoDownload').style.display = '';
-            saveVeoHistory({ prompt, model, videoUrl: firstUrl, aspect, duration, ts: Date.now() });
-            renderVeoHistory();
-            showToast('✔ Video URL ditemukan!');
-          } else {
-            // URL bukan video, tampilkan sebagai teks dengan link clickable
-            videoWrap.innerHTML = `<div style="padding:14px;font-family:var(--font-mono);font-size:12px;color:var(--text);line-height:1.7">
-              ${escapeHtmlRaw(rawContent).replace(
-                /https?:\/\/[^\s"'<>&]+/g,
-                u => `<a href="${u}" target="_blank" style="color:var(--accent);word-break:break-all">${u}</a>`
-              )}
-            </div>`;
-          }
-        } else {
-          // Murni teks — tampilkan raw response
-          videoWrap.innerHTML = `<div style="padding:14px;font-family:var(--font-mono);font-size:12px;color:var(--text);line-height:1.7;white-space:pre-wrap">${escapeHtmlRaw(rawContent)}</div>`;
-        }
-        document.getElementById('veoResultLabel').textContent = `// RESPONSE — ${model.split('/').pop()}`;
-        showToast('Response diterima — lihat output');
+      // Logika deteksi URL Video dari respon (mencari link .mp4 atau .webm)
+      const urlMatch = content.match(/https?:\/\/[^\s]+\.(mp4|webm|mov)/gi);
+      
+      if (urlMatch) {
+        // Render tag video responsif
+        preview.innerHTML = `
+          <video src="${urlMatch[0]}" controls autoplay loop>Browser not supporting video tag.</video>
+          <div style="position:absolute; bottom:5px; right:5px; font-size:10px; color:var(--accent); background:rgba(0,0,0,0.5); padding:2px 5px; border-radius:2px; font-family:var(--font-mono);">
+            VEO_SEQUENCE_SUCCESS [${model}]
+          </div>`;
       } else {
-        throw new Error('Response kosong. Raw: ' + JSON.stringify(data).slice(0, 300));
+        // Jika AI hanya memberi teks/deskripsi (proses rendering gagal)
+        preview.innerHTML = `<div class="vid-placeholder">⚠ RENDER_FAIL: AI did not provide a media URL. Check system logs.<br><br>// Description: ${content}</div>`;
       }
-
     } catch (err) {
-      const msg = err.message.length > 300 ? err.message.slice(0, 300) + '…' : err.message;
-      videoWrap.innerHTML = `<div class="veo-loading" style="color:var(--accent2);flex-direction:column;gap:8px;text-align:left;padding:16px">
-        <span style="font-size:13px">⚠ ERROR</span>
-        <span style="font-size:11px;opacity:.8">${escapeHtmlRaw(msg)}</span>
-      </div>`;
-      document.getElementById('veoResultLabel').textContent = '// ERROR';
+      // Tangani fatal error (koneksi terputus, API salah, dll)
+      preview.innerHTML = `<div class="vid-placeholder" style="color:var(--warn)">FATAL_ERROR: ${err.message}<br><br>// Initialize system reset. Check config inputs.</div>`;
+    } finally {
+      // Kembalikan status tombol
+      btn.disabled = false;
+      btn.textContent = "EXECUTE VEO GENERATION SEQUENCE";
     }
-
-    btn.disabled = false;
-    btn.textContent = '⬡ GENERATE VIDEO';
   }
 
-  function saveVeoHistory(entry) {
-    let hist = [];
-    try { hist = JSON.parse(localStorage.getItem(LS_VEO_HISTORY) || '[]'); } catch {}
-    hist.unshift(entry);
-    localStorage.setItem(LS_VEO_HISTORY, JSON.stringify(hist.slice(0, 20)));
+  // 2. FUNGSI CHAT (GEMINI 2.0 FLASH - Tambahan)
+  async function sendMessage() {
+    const input = document.getElementById('userInput');
+    const apiKey = document.getElementById('apiKey').value.trim();
+    const prompt = input.value.trim();
+
+    if (!prompt || !apiKey) return alert("API Key dan Prompt wajib diisi!");
+
+    renderMessage('user', prompt);
+    input.value = '';
+    const botMsgId = renderMessage('bot', '...', true);
+
+    chatMessages.push({ role: "user", content: prompt });
+
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: "gemini/gemini-2.0-flash", // Tetap pakai gemini untuk chat
+          messages: chatMessages,
+          stream: true
+        })
+      });
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const dataStr = line.slice(6).trim();
+            if (dataStr === '[DONE]') break;
+            try {
+              const json = JSON.parse(dataStr);
+              const content = json.choices[0].delta.content || "";
+              fullText += content;
+              updateMessage(botMsgId, fullText);
+            } catch (e) {}
+          }
+        }
+      }
+      chatMessages.push({ role: "assistant", content: fullText });
+    } catch (err) {
+      updateMessage(botMsgId, "ERROR: " + err.message);
+    }
   }
 
-  function renderVeoHistory() {
-    const wrap = document.getElementById('veoHistory');
-    if (!wrap) return;
-    let hist = [];
-    try { hist = JSON.parse(localStorage.getItem(LS_VEO_HISTORY) || '[]'); } catch {}
-    if (hist.length === 0) { wrap.innerHTML = ''; return; }
-    wrap.innerHTML = `<div class="veo-hist-label">RIWAYAT GENERATE (${hist.length})</div>` +
-      hist.map((h, i) => `
-        <div class="veo-result-area">
-          <div class="veo-result-head">
-            <span>${escapeHtmlRaw(h.prompt.slice(0, 50))}${h.prompt.length > 50 ? '…' : ''} · ${h.model.split('/').pop()} · ${formatRelTime(h.ts)}</span>
-            <div style="display:flex;gap:6px;align-items:center">
-              <a class="veo-dl-btn" href="${escapeHtmlRaw(h.videoUrl)}" download="veo_${i}.mp4">⬇</a>
-              <button class="veo-dl-btn" style="color:var(--accent2)" onclick="deleteVeoHist(${i})">✕</button>
-            </div>
-          </div>
-          <video controls style="width:100%;max-height:200px;background:#000;">
-            <source src="${escapeHtmlRaw(h.videoUrl)}" type="video/mp4">
-          </video>
-        </div>`).join('');
+  // HELPER UI: Render Message
+  function renderMessage(role, text, isThinking = false) {
+    const wrap = document.getElementById('chatWrap');
+    if (wrap.querySelector('.vid-placeholder')) wrap.innerHTML = '';
+
+    const id = 'msg-' + Date.now();
+    const div = document.createElement('div');
+    div.className = `msg ${role}`;
+    div.innerHTML = `
+      <div class="msg-avatar">${role === 'user' ? 'USR' : 'SYS'}</div>
+      <div class="msg-body">
+        <div class="msg-text" id="${id}">${isThinking ? '<span class="thinking-dots"><span>.</span><span>.</span><span>.</span></span>' : text}</div>
+      </div>`;
+    wrap.appendChild(div);
+    wrap.scrollTop = wrap.scrollHeight;
+    return id;
   }
 
-  function deleteVeoHist(idx) {
-    let hist = [];
-    try { hist = JSON.parse(localStorage.getItem(LS_VEO_HISTORY) || '[]'); } catch {}
-    hist.splice(idx, 1);
-    localStorage.setItem(LS_VEO_HISTORY, JSON.stringify(hist));
-    renderVeoHistory();
-  }
-
-  function updateCharCount(el) {
-    const len = el.value.length;
-    const max = SEC.MAX_INPUT_CHARS;
-    const el2 = document.getElementById('charCount');
-    el2.textContent = `${len} / ${max}`;
-    el2.style.color = len > max * 0.9 ? '#ff6060' : len > max * 0.7 ? '#ffaa00' : 'var(--muted)';
-  }
-
-  function autoResize(el) {
-    el.style.height = '44px';
-    el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+  // HELPER UI: Update Message Teks
+  function updateMessage(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.innerText = text;
   }
 </script>
+
 </body>
 </html>
