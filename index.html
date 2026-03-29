@@ -1160,8 +1160,8 @@
 
   <!-- MODE TABS -->
   <div class="mode-tabs">
-    <button class="mode-tab active" id="tabChat" onclick="switchMode('chat')">💬 CHAT</button>
-    <button class="mode-tab" id="tabVideo" onclick="switchMode('video')">🎬 VIDEO GEN <span class="tab-badge">VEO</span></button>
+    <button class="mode-tab active" id="tabChat">💬 CHAT</button>
+    <a href="video.html" class="mode-tab" style="text-decoration:none">🎬 VIDEO GEN <span class="tab-badge">VEO</span></a>
   </div>
 
   <!-- SYSTEM INSTRUCTIONS PANEL -->
@@ -1218,60 +1218,6 @@
     </div>
   </div>
 
-  <!-- VIDEO GENERATOR PANEL -->
-  <div id="videoPanel">
-    <div class="veo-config">
-      <div class="veo-config-row">
-        <span class="veo-label">ENDPOINT:</span>
-        <span style="font-family:var(--font-mono);font-size:11px;color:var(--accent);flex:1" id="veoEndpointDisplay"></span>
-      </div>
-      <div class="veo-config-row">
-        <span class="veo-label">MODEL:</span>
-        <select id="veoModel">
-          <option value="vertex_ai/veo-3.1-fast-generate-001" selected>veo-3.1-fast</option>
-          <option value="vertex_ai/veo-3.0-generate-001">veo-3.0</option>
-          <option value="vertex_ai/veo-2.0-generate-001">veo-2.0</option>
-        </select>
-        <span class="veo-label">DURASI:</span>
-        <select id="veoDuration">
-          <option value="4" selected>4s</option>
-          <option value="6">6s</option>
-          <option value="8">8s</option>
-        </select>
-        <span class="veo-label">RASIO:</span>
-        <select id="veoAspect">
-          <option value="1280x720" selected>16:9</option>
-          <option value="720x1280">9:16</option>
-          <option value="720x720">1:1</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="veo-prompt-wrap">
-      <textarea id="veoPrompt" placeholder="Deskripsikan video yang ingin di-generate...
-Contoh: A cinematic drone shot flying over a neon-lit cyberpunk city at night, neon lights, 4k"></textarea>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <button class="veo-generate-btn" id="veoBtn" onclick="generateVideo()">⬡ GENERATE VIDEO</button>
-        <button class="veo-generate-btn" id="veoCancelBtn" onclick="cancelVideo()" style="display:none;background:linear-gradient(135deg,#ff003c50,#ff003c80);color:#fff">✕ CANCEL</button>
-      </div>
-    </div>
-
-    <!-- Progress / Status -->
-    <div id="veoStatus" style="display:none;font-family:var(--font-mono);font-size:11px;color:var(--muted);padding:8px 0;display:flex;gap:10px;align-items:center">
-      <div class="veo-spinner" id="veoSpinner" style="display:none"></div>
-      <span id="veoStatusText"></span>
-    </div>
-
-    <div id="veoResultArea" style="display:none" class="veo-result-area">
-      <div class="veo-result-head">
-        <span id="veoResultLabel">// OUTPUT</span>
-        <a id="veoDownload" class="veo-dl-btn" download="cybermind_video.mp4" style="display:none">⬇ DOWNLOAD</a>
-      </div>
-      <div id="veoVideoWrap"></div>
-    </div>
-
-    <div id="veoHistory" class="veo-history"></div>
-  </div>
 
   <!-- INPUT ROW -->
   <div class="input-row">

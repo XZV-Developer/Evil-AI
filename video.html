@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VEO GENERATOR // CyberMind</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src *; media-src * blob:; img-src 'self' data:; object-src 'none'; frame-src 'none';"/>
+  <meta http-equiv="X-Frame-Options" content="DENY"/>
+  <meta name="referrer" content="no-referrer"/>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:      #030a0e;
+      --panel:   #050f14;
+      --border:  #0d3040;
+      --accent:  #00ffe7;
+      --accent2: #ff003c;
+      --dim:     #0a5060;
+      --text:    #c8f0f8;
+      --muted:   #3d7a8a;
+      --glow:    0 0 12px #00ffe780;
+      --mono:    'Share Tech Mono', monospace;
+      --head:    'Orbitron', sans-serif;
+      --body:    'Rajdhani', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { height: 100%; height: -webkit-fill-available; }
+    body {
+      height: 100dvh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--body);
+      overflow-y: auto;
+    }
+
+    /* scanlines */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,231,0.012) 2px, rgba(0,255,231,0.012) 4px);
+      pointer-events: none; z-index: 9999;
+    }
+    /* grid bg */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: linear-gradient(rgba(0,255,231,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,255,231,0.025) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none; z-index: 0;
+    }
+
+    #app {
+      position: relative; z-index: 1;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 14px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* ── HEADER ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-text { font-family: var(--head); font-size: 17px; font-weight: 900; letter-spacing: .15em; color: var(--accent); text-shadow: var(--glow); }
+    .logo-text span { color: var(--accent2); }
+    .logo-sub { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: .2em; margin-top: 2px; }
+    .logo-icon { width: 36px; height: 36px; }
+    .logo-icon svg { width: 100%; height: 100%; }
+
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .back-btn {
+      font-family: var(--mono); font-size: 10px; color: var(--muted);
+      background: transparent; border: 1px solid var(--border);
+      padding: 4px 10px; border-radius: 2px; cursor: pointer;
+      text-decoration: none; transition: all .15s; letter-spacing: .08em;
+    }
+    .back-btn:hover { color: var(--accent); border-color: var(--dim); }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #00ff88; box-shadow: 0 0 6px #00ff88; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* ── INPUTS ── */
+    input, select, textarea {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 7px 10px;
+      border-radius: 3px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px rgba(0,255,231,.2);
+    }
+    select option { background: #0a1a22; }
+
+    /* ── CONFIG CARD ── */
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .card-title {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--accent);
+      letter-spacing: .15em;
+    }
+    .card-title::before { content: '// '; color: var(--accent2); }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .lbl {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: .08em;
+      white-space: nowrap;
+      min-width: 70px;
+    }
+
+    #apiKey   { flex: 1; min-width: 160px; }
+    #endpoint { flex: 1; min-width: 200px; font-size: 11px; }
+    #model    { min-width: 220px; }
+    #duration { width: 72px; }
+    #size     { width: 120px; }
+
+    /* ── PROMPT AREA ── */
+    #prompt {
+      width: 100%;
+      height: 100px;
+      resize: vertical;
+      font-family: var(--body);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    #prompt::placeholder { color: var(--muted); }
+
+    /* ── BUTTONS ── */
+    .btn-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+    .gen-btn {
+      font-family: var(--head);
+      font-size: 12px;
+      letter-spacing: .15em;
+      color: var(--bg);
+      background: linear-gradient(135deg, var(--accent), #00c8b8);
+      border: none;
+      padding: 11px 28px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .gen-btn:hover { box-shadow: var(--glow); transform: translateY(-1px); }
+    .gen-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .cancel-btn {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent2);
+      background: rgba(255,0,60,.08);
+      border: 1px solid #3a0010;
+      padding: 10px 18px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all .15s;
+      display: none;
+    }
+    .cancel-btn:hover { background: rgba(255,0,60,.18); }
+
+    .btn-hint {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    /* ── STATUS BAR ── */
+    #statusBar {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      padding: 6px 0;
+    }
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid var(--dim);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── RESULT ── */
+    #resultArea {
+      display: none;
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 4px 4px 0;
+      overflow: hidden;
+      background: #020c12;
+    }
+    .result-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+    }
+    .result-head span { color: var(--accent); }
+    .dl-btn {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--accent);
+      background: rgba(0,255,231,.08);
+      border: 1px solid var(--dim);
+      padding: 3px 10px;
+      border-radius: 2px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all .15s;
+      display: none;
+    }
+    .dl-btn:hover { background: rgba(0,255,231,.18); }
+    #videoWrap video { width: 100%; display: block; background: #000; }
+    .raw-out {
+      padding: 14px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      white-space: pre-wrap;
+      overflow-x: auto;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    /* ── HISTORY ── */
+    #historyWrap { display: flex; flex-direction: column; gap: 10px; }
+    .hist-title {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: .1em;
+    }
+    .hist-title::before { content: '// '; color: var(--accent2); }
+    .hist-item {
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      background: #020c12;
+    }
+    .hist-item-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 12px;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      gap: 8px;
+    }
+    .hist-item-head .prompt-preview { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hist-item-actions { display: flex; gap: 5px; flex-shrink: 0; }
+    .hist-item video { width: 100%; max-height: 220px; background: #000; display: block; }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed; top: 14px; right: 14px;
+      background: #0d1f2a; border: 1px solid var(--accent2);
+      color: var(--accent2); font-family: var(--mono); font-size: 12px;
+      padding: 8px 16px; border-radius: 3px;
+      z-index: 99999; display: none;
+      animation: fadeIn .2s;
+    }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:none} }
+
+    @media (max-width: 600px) {
+      .logo-text { font-size: 13px; }
+      #model { min-width: 160px; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 38 38" fill="none">
+          <polygon points="19,2 36,10 36,28 19,36 2,28 2,10" stroke="#00ffe7" stroke-width="1.5" fill="none" opacity=".6"/>
+          <polygon points="19,7 31,13 31,25 19,31 7,25 7,13" stroke="#00ffe7" stroke-width="1" fill="none" opacity=".3"/>
+          <circle cx="19" cy="19" r="5" fill="#ff003c" opacity=".9"/>
+          <circle cx="19" cy="19" r="8" stroke="#ff003c" stroke-width=".5" fill="none" opacity=".4"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-text">CYBER<span>VEO</span></div>
+        <div class="logo-sub">VIDEO GENERATOR // VEO AI</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="status-dot"></div>
+      <a href="index.html" class="back-btn">← CHAT</a>
+    </div>
+  </header>
+
+  <!-- CONFIG -->
+  <div class="card">
+    <div class="card-title">KONFIGURASI API</div>
+    <div class="row">
+      <span class="lbl">BASE URL:</span>
+      <input type="text" id="endpoint" placeholder="https://api.koboillm.com" />
+    </div>
+    <div class="row">
+      <span class="lbl">API KEY:</span>
+      <input type="password" id="apiKey" placeholder="sk-••••••••••••••••" />
+    </div>
+  </div>
+
+  <!-- MODEL SETTINGS -->
+  <div class="card">
+    <div class="card-title">PENGATURAN MODEL</div>
+    <div class="row">
+      <span class="lbl">MODEL:</span>
+      <select id="model">
+        <option value="vertex_ai/veo-3.1-fast-generate-001" selected>veo-3.1-fast</option>
+        <option value="vertex_ai/veo-3.0-generate-001">veo-3.0</option>
+        <option value="vertex_ai/veo-2.0-generate-001">veo-2.0</option>
+      </select>
+      <span class="lbl">DURASI:</span>
+      <select id="duration">
+        <option value="4" selected>4s</option>
+        <option value="6">6s</option>
+        <option value="8">8s</option>
+      </select>
+      <span class="lbl">SIZE:</span>
+      <select id="size">
+        <option value="1280x720" selected>1280×720 (16:9)</option>
+        <option value="720x1280">720×1280 (9:16)</option>
+        <option value="720x720">720×720 (1:1)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- PROMPT -->
+  <div class="card">
+    <div class="card-title">PROMPT</div>
+    <textarea id="prompt" placeholder="Deskripsikan video yang ingin di-generate...
+Contoh: A cinematic drone shot of a futuristic cyberpunk city, neon lights, 4k"></textarea>
+    <div class="btn-row">
+      <button class="gen-btn" id="genBtn" onclick="startGenerate()">⬡ GENERATE VIDEO</button>
+      <button class="cancel-btn" id="cancelBtn" onclick="cancelGenerate()">✕ CANCEL</button>
+      <span class="btn-hint" id="btnHint">Veo biasanya butuh 60–120 detik</span>
+    </div>
+  </div>
+
+  <!-- STATUS -->
+  <div id="statusBar">
+    <div class="spinner" id="spinner"></div>
+    <span id="statusText"></span>
+  </div>
+
+  <!-- RESULT -->
+  <div id="resultArea">
+    <div class="result-head">
+      <span id="resultLabel">// OUTPUT</span>
+      <a id="dlBtn" class="dl-btn" download="cyberveo_output.mp4">⬇ DOWNLOAD MP4</a>
+    </div>
+    <div id="videoWrap"></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="historyWrap"></div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // ── Storage keys ─────────────────────────────
+  const LS_KEY      = 'cveo_apikey';
+  const LS_ENDPOINT = 'cveo_endpoint';
+  const LS_HISTORY  = 'cveo_history';
+
+  // ── State ────────────────────────────────────
+  let polling    = false;
+  let cancelled  = false;
+  let pollTimer  = null;
+
+  // ── Init ─────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', () => {
+    const k = localStorage.getItem(LS_KEY);
+    const e = localStorage.getItem(LS_ENDPOINT);
+    if (k) document.getElementById('apiKey').value   = k;
+    if (e) document.getElementById('endpoint').value = e;
+
+    document.getElementById('apiKey').addEventListener('input',    () => localStorage.setItem(LS_KEY,      document.getElementById('apiKey').value));
+    document.getElementById('endpoint').addEventListener('input',  () => localStorage.setItem(LS_ENDPOINT, document.getElementById('endpoint').value.trim()));
+
+    renderHistory();
+  });
+
+  // ── Helpers ──────────────────────────────────
+  function esc(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function toast(msg, ms = 3000) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', ms);
+  }
+
+  function setStatus(msg, spin = true) {
+    const bar = document.getElementById('statusBar');
+    document.getElementById('statusText').textContent = msg;
+    document.getElementById('spinner').style.display  = spin ? 'block' : 'none';
+    bar.style.display = 'flex';
+  }
+
+  function hideStatus() {
+    document.getElementById('statusBar').style.display = 'none';
+  }
+
+  function relTime(ts) {
+    const d = Date.now() - ts;
+    if (d < 60000)    return 'baru saja';
+    if (d < 3600000)  return Math.floor(d/60000)   + 'm lalu';
+    if (d < 86400000) return Math.floor(d/3600000)  + 'j lalu';
+    return new Date(ts).toLocaleDateString('id-ID');
+  }
+
+  // ── GENERATE ─────────────────────────────────
+  async function startGenerate() {
+    const apiKey   = document.getElementById('apiKey').value.trim();
+    const base     = document.getElementById('endpoint').value.trim().replace(/\/$/, '');
+    const model    = document.getElementById('model').value;
+    const prompt   = document.getElementById('prompt').value.trim();
+    const seconds  = parseInt(document.getElementById('duration').value);
+    const size     = document.getElementById('size').value;
+
+    if (!base)   { toast('⚠ Isi BASE URL dulu'); return; }
+    if (!apiKey) { toast('⚠ Isi API KEY dulu');  return; }
+    if (!prompt) { toast('⚠ Prompt kosong');      return; }
+
+    cancelled = false;
+    polling   = true;
+
+    const genBtn    = document.getElementById('genBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    genBtn.disabled = true;
+    cancelBtn.style.display = 'inline-block';
+    document.getElementById('resultArea').style.display = 'none';
+    document.getElementById('videoWrap').innerHTML = '';
+    document.getElementById('dlBtn').style.display = 'none';
+
+    const headers = {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type':  'application/json'
+    };
+
+    // ── STEP 1: POST /v1/videos ────────────────
+    setStatus(`🎬 Mengirim request ke ${model.split('/').pop()}...`);
+
+    let videoId;
+    try {
+      const res  = await fetch(`${base}/v1/videos`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ model, prompt, seconds, size })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error?.message || `HTTP ${res.status}: ${JSON.stringify(data).slice(0,300)}`);
+      videoId = data?.id;
+      if (!videoId) throw new Error('Tidak ada ID di response: ' + JSON.stringify(data).slice(0,300));
+    } catch (err) {
+      setStatus('❌ ' + err.message.slice(0, 300), false);
+      resetBtn();
+      return;
+    }
+
+    setStatus(`✅ Job dimulai! ID: ${videoId.slice(0,30)}... — polling tiap 5 detik`);
+
+    // ── STEP 2: POLLING ────────────────────────
+    const startTime  = Date.now();
+    const TIMEOUT_MS = 5 * 60 * 1000;
+    let elapsed      = 0;
+
+    const poll = async () => {
+      if (cancelled) return;
+
+      elapsed = Math.floor((Date.now() - startTime) / 1000);
+
+      if (Date.now() - startTime > TIMEOUT_MS) {
+        setStatus('❌ Timeout — Veo tidak merespons dalam 5 menit', false);
+        resetBtn(); return;
+      }
+
+      let statusData;
+      try {
+        const sr = await fetch(`${base}/v1/videos/${videoId}`, { headers });
+        statusData = await sr.json();
+      } catch (e) {
+        setStatus(`⚠ Poll error: ${e.message} — retry (${elapsed}s)...`);
+        pollTimer = setTimeout(poll, 5000); return;
+      }
+
+      const status = statusData?.status || '?';
+      setStatus(`⏳ Status: ${status} — ${elapsed}s berlalu... (biasanya 60–120s)`);
+
+      if (status === 'completed') {
+        await handleCompleted(base, videoId, statusData, model, prompt, size, seconds, headers);
+        resetBtn(); return;
+      }
+
+      if (status === 'failed') {
+        setStatus('❌ Generation gagal:\n' + JSON.stringify(statusData, null, 2).slice(0, 400), false);
+        showRaw(statusData);
+        resetBtn(); return;
+      }
+
+      pollTimer = setTimeout(poll, 5000);
+    };
+
+    pollTimer = setTimeout(poll, 5000);
+  }
+
+  function cancelGenerate() {
+    cancelled = true;
+    if (pollTimer) clearTimeout(pollTimer);
+    setStatus('⚠ Dibatalkan', false);
+    resetBtn();
+  }
+
+  function resetBtn() {
+    polling = false;
+    const genBtn    = document.getElementById('genBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    genBtn.disabled = false;
+    genBtn.textContent = '⬡ GENERATE VIDEO';
+    cancelBtn.style.display = 'none';
+  }
+
+  // ── STEP 3: HANDLE COMPLETED ──────────────────
+  async function handleCompleted(base, videoId, statusData, model, prompt, size, seconds, headers) {
+    const resultArea = document.getElementById('resultArea');
+    const videoWrap  = document.getElementById('videoWrap');
+    const dlBtn      = document.getElementById('dlBtn');
+    const resultLabel = document.getElementById('resultLabel');
+
+    resultArea.style.display = 'block';
+    resultLabel.textContent  = `// OUTPUT — ${model.split('/').pop()}`;
+    setStatus('✅ Selesai! Mengambil video...', true);
+
+    let videoUrl  = null;
+    let blobUrl   = null;
+
+    // Option A: /content endpoint (download bytes)
+    try {
+      const cr = await fetch(`${base}/v1/videos/${videoId}/content`, { headers });
+      if (cr.ok) {
+        const ct = cr.headers.get('content-type') || '';
+        if (ct.includes('video') || ct.includes('octet')) {
+          const blob = await cr.blob();
+          blobUrl  = URL.createObjectURL(blob);
+          videoUrl = blobUrl;
+        }
+      }
+    } catch (e) { /* fallback */ }
+
+    // Option B: URL dari status_data
+    if (!videoUrl) {
+      const raw = statusData?.data?.[0]?.url
+               || statusData?.output
+               || statusData?.url
+               || null;
+      if (raw) {
+        videoUrl = typeof raw === 'string' && raw.startsWith('gs://')
+          ? raw.replace('gs://', 'https://storage.googleapis.com/')
+          : raw;
+      }
+    }
+
+    if (videoUrl) {
+      videoWrap.innerHTML = `
+        <video controls autoplay loop style="width:100%;background:#000;max-height:480px">
+          <source src="${esc(videoUrl)}" type="video/mp4">
+          <p style="padding:14px;font-family:var(--mono);font-size:11px;color:var(--accent)">
+            Browser tidak bisa putar inline.
+            <a href="${esc(videoUrl)}" target="_blank" style="color:var(--accent)">Buka di tab baru ↗</a>
+          </p>
+        </video>`;
+      dlBtn.href         = videoUrl;
+      dlBtn.style.display = '';
+      hideStatus();
+      toast('✔ Video berhasil di-generate!');
+
+      // Simpan ke history (skip blob — tidak persistent)
+      if (!blobUrl) {
+        saveHistory({ prompt, model, videoUrl, size, seconds, ts: Date.now() });
+      } else {
+        toast('⚠ Video adalah blob URL — tidak bisa disimpan ke history, segera download!', 5000);
+      }
+
+    } else {
+      // Tidak ada URL — tampilkan raw JSON untuk debug
+      setStatus('⚠ Tidak ada video URL di response — lihat raw JSON di bawah', false);
+      showRaw(statusData);
+    }
+  }
+
+  function showRaw(data) {
+    const resultArea = document.getElementById('resultArea');
+    const videoWrap  = document.getElementById('videoWrap');
+    resultArea.style.display = 'block';
+    document.getElementById('resultLabel').textContent = '// RAW RESPONSE';
+    videoWrap.innerHTML = `<div class="raw-out">${esc(JSON.stringify(data, null, 2))}</div>`;
+  }
+
+  // ── HISTORY ──────────────────────────────────
+  function saveHistory(entry) {
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(LS_HISTORY) || '[]'); } catch {}
+    hist.unshift(entry);
+    localStorage.setItem(LS_HISTORY, JSON.stringify(hist.slice(0, 20)));
+    renderHistory();
+  }
+
+  function deleteHistory(idx) {
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(LS_HISTORY) || '[]'); } catch {}
+    hist.splice(idx, 1);
+    localStorage.setItem(LS_HISTORY, JSON.stringify(hist));
+    renderHistory();
+  }
+
+  function clearHistory() {
+    if (!confirm('Hapus semua riwayat?')) return;
+    localStorage.removeItem(LS_HISTORY);
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const wrap = document.getElementById('historyWrap');
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(LS_HISTORY) || '[]'); } catch {}
+    if (hist.length === 0) { wrap.innerHTML = ''; return; }
+
+    wrap.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span class="hist-title">RIWAYAT (${hist.length})</span>
+        <button onclick="clearHistory()" style="font-family:var(--mono);font-size:10px;color:var(--accent2);background:transparent;border:1px solid #3a0010;padding:3px 10px;border-radius:2px;cursor:pointer">🗑 HAPUS SEMUA</button>
+      </div>` +
+      hist.map((h, i) => `
+        <div class="hist-item">
+          <div class="hist-item-head">
+            <span class="prompt-preview" title="${esc(h.prompt)}">${esc(h.prompt.slice(0,60))}${h.prompt.length>60?'…':''}</span>
+            <div class="hist-item-actions">
+              <span style="color:var(--muted)">${h.model.split('/').pop()} · ${h.seconds}s · ${relTime(h.ts)}</span>
+              <a href="${esc(h.videoUrl)}" download="veo_${i}.mp4" class="dl-btn" style="display:inline-block">⬇</a>
+              <button onclick="deleteHistory(${i})" class="dl-btn" style="display:inline-block;color:var(--accent2);border-color:#3a0010;cursor:pointer">✕</button>
+            </div>
+          </div>
+          <video controls style="width:100%;max-height:220px;background:#000;display:block">
+            <source src="${esc(h.videoUrl)}" type="video/mp4">
+          </video>
+        </div>`).join('');
+  }
+</script>
+</body>
+</html>
