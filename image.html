@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IMAGE GENERATOR // CyberMind</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src *; img-src 'self' data: blob:; object-src 'none'; frame-src 'none';"/>
+  <meta http-equiv="X-Frame-Options" content="DENY"/>
+  <meta name="referrer" content="no-referrer"/>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:      #030a0e;
+      --panel:   #050f14;
+      --border:  #0d3040;
+      --accent:  #00ffe7;
+      --accent2: #ff003c;
+      --accent3: #a855f7;
+      --dim:     #0a5060;
+      --text:    #c8f0f8;
+      --muted:   #3d7a8a;
+      --glow:    0 0 12px #00ffe780;
+      --glow3:   0 0 12px #a855f780;
+      --mono:    'Share Tech Mono', monospace;
+      --head:    'Orbitron', sans-serif;
+      --body:    'Rajdhani', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { height: 100%; height: -webkit-fill-available; }
+    body {
+      min-height: 100dvh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--body);
+      overflow-y: auto;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(168,85,247,0.012) 2px, rgba(168,85,247,0.012) 4px);
+      pointer-events: none; z-index: 9999;
+    }
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(168,85,247,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,231,0.02) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none; z-index: 0;
+    }
+
+    #app {
+      position: relative; z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 14px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* ── HEADER ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon { width: 36px; height: 36px; }
+    .logo-icon svg { width: 100%; height: 100%; }
+    .logo-text { font-family: var(--head); font-size: 17px; font-weight: 900; letter-spacing: .15em; color: var(--accent3); text-shadow: var(--glow3); }
+    .logo-text span { color: var(--accent); }
+    .logo-sub { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: .2em; margin-top: 2px; }
+    .header-right { display: flex; align-items: center; gap: 8px; }
+    .nav-btn {
+      font-family: var(--mono); font-size: 10px; color: var(--muted);
+      background: transparent; border: 1px solid var(--border);
+      padding: 4px 10px; border-radius: 2px; cursor: pointer;
+      text-decoration: none; transition: all .15s; letter-spacing: .08em;
+    }
+    .nav-btn:hover { color: var(--accent3); border-color: var(--accent3); }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent3); box-shadow: 0 0 6px var(--accent3); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* ── INPUTS ── */
+    input, select, textarea {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 7px 10px;
+      border-radius: 3px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent3);
+      box-shadow: 0 0 8px rgba(168,85,247,.25);
+    }
+    select option { background: #0a1a22; }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .card-title {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--accent3);
+      letter-spacing: .15em;
+    }
+    .card-title::before { content: '// '; color: var(--accent); }
+
+    .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .lbl { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: .08em; white-space: nowrap; min-width: 70px; }
+
+    #apiKey   { flex: 1; min-width: 160px; }
+    #endpoint { flex: 1; min-width: 200px; font-size: 11px; }
+    #model    { min-width: 220px; }
+    #imgSize  { width: 140px; }
+    #imgCount { width: 70px; }
+    #customModel { display:none; min-width: 200px; flex: 1; }
+
+    /* ── PROMPT ── */
+    #prompt {
+      width: 100%;
+      height: 90px;
+      resize: vertical;
+      font-family: var(--body);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    #negPrompt {
+      width: 100%;
+      height: 60px;
+      resize: vertical;
+      font-family: var(--body);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    #prompt::placeholder, #negPrompt::placeholder { color: var(--muted); }
+
+    /* ── BUTTONS ── */
+    .btn-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+    .gen-btn {
+      font-family: var(--head);
+      font-size: 12px;
+      letter-spacing: .15em;
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent3), #7c3aed);
+      border: none;
+      padding: 11px 28px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .gen-btn:hover { box-shadow: var(--glow3); transform: translateY(-1px); }
+    .gen-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* ── STATUS ── */
+    #statusBar {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      padding: 4px 0;
+    }
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid var(--dim);
+      border-top-color: var(--accent3);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── IMAGE GRID ── */
+    #imageGrid {
+      display: none;
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent3);
+      border-radius: 0 4px 4px 0;
+      overflow: hidden;
+      background: #020c12;
+    }
+    .grid-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+    }
+    .grid-head span { color: var(--accent3); }
+    .img-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1px;
+      background: var(--border);
+    }
+    .img-cell {
+      position: relative;
+      background: #020c12;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .img-cell img {
+      width: 100%;
+      display: block;
+      transition: transform .2s;
+    }
+    .img-cell:hover img { transform: scale(1.03); }
+    .img-cell .img-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0);
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
+      padding: 6px;
+      transition: background .2s;
+    }
+    .img-cell:hover .img-overlay { background: rgba(0,0,0,0.5); }
+    .dl-img-btn {
+      display: none;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--accent3);
+      background: rgba(0,0,0,0.8);
+      border: 1px solid var(--accent3);
+      padding: 3px 8px;
+      border-radius: 2px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all .15s;
+    }
+    .img-cell:hover .dl-img-btn { display: inline-block; }
+
+    /* ── LIGHTBOX ── */
+    #lightbox {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.92);
+      z-index: 9000;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      padding: 20px;
+    }
+    #lightbox.open { display: flex; }
+    #lightboxImg {
+      max-width: 90vw;
+      max-height: 80vh;
+      border: 1px solid var(--accent3);
+      border-radius: 3px;
+    }
+    .lb-actions { display: flex; gap: 10px; }
+    .lb-btn {
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 6px 16px;
+      border-radius: 3px;
+      cursor: pointer;
+      border: 1px solid;
+      transition: all .15s;
+      text-decoration: none;
+    }
+    .lb-close { color: var(--accent2); border-color: var(--accent2); background: transparent; }
+    .lb-close:hover { background: rgba(255,0,60,.15); }
+    .lb-dl    { color: var(--accent3); border-color: var(--accent3); background: transparent; }
+    .lb-dl:hover { background: rgba(168,85,247,.15); }
+
+    /* ── HISTORY ── */
+    #histWrap { display: flex; flex-direction: column; gap: 10px; }
+    .hist-title { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: .1em; }
+    .hist-title::before { content: '// '; color: var(--accent3); }
+    .hist-row { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+    .hist-grid-wrap {
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      background: #020c12;
+    }
+    .hist-grid-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      gap: 8px;
+    }
+    .hist-grid-head .h-prompt { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hist-mini-grid {
+      display: flex;
+      gap: 1px;
+      background: var(--border);
+      flex-wrap: wrap;
+    }
+    .hist-mini-grid img {
+      height: 100px;
+      flex: 1;
+      object-fit: cover;
+      cursor: pointer;
+      display: block;
+      transition: opacity .15s;
+    }
+    .hist-mini-grid img:hover { opacity: .85; }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed; top: 14px; right: 14px;
+      background: #0d1f2a; border: 1px solid var(--accent3);
+      color: var(--accent3); font-family: var(--mono); font-size: 12px;
+      padding: 8px 16px; border-radius: 3px;
+      z-index: 99999; display: none;
+      animation: fadeIn .2s;
+    }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:none} }
+
+    @media (max-width: 600px) {
+      .logo-text { font-size: 13px; }
+      .img-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 38 38" fill="none">
+          <polygon points="19,2 36,10 36,28 19,36 2,28 2,10" stroke="#a855f7" stroke-width="1.5" fill="none" opacity=".6"/>
+          <polygon points="19,7 31,13 31,25 19,31 7,25 7,13" stroke="#a855f7" stroke-width="1" fill="none" opacity=".3"/>
+          <circle cx="19" cy="19" r="5" fill="#00ffe7" opacity=".9"/>
+          <circle cx="19" cy="19" r="8" stroke="#00ffe7" stroke-width=".5" fill="none" opacity=".4"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-text">CYBER<span>IMAGE</span></div>
+        <div class="logo-sub">AI IMAGE GENERATOR // IMAGEN</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="status-dot"></div>
+      <a href="video.html" class="nav-btn">🎬 VIDEO</a>
+      <a href="index.html" class="nav-btn">← CHAT</a>
+    </div>
+  </header>
+
+  <!-- CONFIG -->
+  <div class="card">
+    <div class="card-title">KONFIGURASI API</div>
+    <div class="row">
+      <span class="lbl">BASE URL:</span>
+      <input type="text" id="endpoint" placeholder="https://litellm.koboi2026.biz.id"/>
+    </div>
+    <div class="row">
+      <span class="lbl">API KEY:</span>
+      <input type="password" id="apiKey" placeholder="sk-••••••••••••••••"/>
+    </div>
+  </div>
+
+  <!-- MODEL -->
+  <div class="card">
+    <div class="card-title">PENGATURAN MODEL</div>
+    <div class="row">
+      <span class="lbl">MODEL:</span>
+      <select id="model" onchange="toggleCustomModel(this)">
+        <option value="vertex_ai/imagen-3.0-generate-002" selected>imagen-3.0</option>
+        <option value="vertex_ai/imagen-3.0-fast-generate-001">imagen-3.0-fast</option>
+        <option value="vertex_ai/imagegeneration@006">imagegeneration@006</option>
+        <option value="dall-e-3">dall-e-3</option>
+        <option value="dall-e-2">dall-e-2</option>
+        <option value="custom">[ custom... ]</option>
+      </select>
+      <input type="text" id="customModel" placeholder="vertex_ai/imagen-..."/>
+    </div>
+    <div class="row">
+      <span class="lbl">SIZE:</span>
+      <select id="imgSize">
+        <option value="1024x1024" selected>1024×1024 (1:1)</option>
+        <option value="1280x720">1280×720 (16:9)</option>
+        <option value="720x1280">720×1280 (9:16)</option>
+        <option value="512x512">512×512</option>
+        <option value="1024x1792">1024×1792 (portrait)</option>
+        <option value="1792x1024">1792×1024 (landscape)</option>
+      </select>
+      <span class="lbl">JUMLAH:</span>
+      <select id="imgCount">
+        <option value="1" selected>1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- PROMPT -->
+  <div class="card">
+    <div class="card-title">PROMPT</div>
+    <textarea id="prompt" placeholder="Deskripsikan gambar yang ingin di-generate...
+Contoh: A futuristic cyberpunk city at night, neon lights reflecting on wet streets, cinematic, ultra detailed, 8k"></textarea>
+    <div class="row" style="gap:6px">
+      <span class="lbl" style="color:var(--accent2)">NEG:</span>
+      <textarea id="negPrompt" style="flex:1;height:50px" placeholder="Negative prompt (opsional): blurry, low quality, watermark..."></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="gen-btn" id="genBtn" onclick="generateImage()">✦ GENERATE IMAGE</button>
+      <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">Via /v1/images/generations</span>
+    </div>
+  </div>
+
+  <!-- STATUS -->
+  <div id="statusBar">
+    <div class="spinner"></div>
+    <span id="statusText"></span>
+  </div>
+
+  <!-- RESULT GRID -->
+  <div id="imageGrid">
+    <div class="grid-head">
+      <span id="gridLabel">// OUTPUT</span>
+      <span id="gridMeta" style="color:var(--muted)"></span>
+    </div>
+    <div class="img-grid" id="imgGridInner"></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="histWrap"></div>
+
+</div>
+
+<!-- LIGHTBOX -->
+<div id="lightbox" onclick="closeLightbox(event)">
+  <img id="lightboxImg" src="" alt="preview"/>
+  <div class="lb-actions">
+    <a id="lbDl" class="lb-btn lb-dl" download="cyberimage.png">⬇ DOWNLOAD</a>
+    <button class="lb-btn lb-close" onclick="closeLightbox()">✕ TUTUP</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const LS_KEY      = 'cimg_apikey';
+  const LS_ENDPOINT = 'cimg_endpoint';
+  const LS_HISTORY  = 'cimg_history';
+
+  // ── Init ─────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', () => {
+    const k = localStorage.getItem(LS_KEY);
+    const e = localStorage.getItem(LS_ENDPOINT);
+    if (k) document.getElementById('apiKey').value   = k;
+    if (e) document.getElementById('endpoint').value = e;
+
+    document.getElementById('apiKey').addEventListener('input',   () => localStorage.setItem(LS_KEY,      document.getElementById('apiKey').value));
+    document.getElementById('endpoint').addEventListener('input', () => localStorage.setItem(LS_ENDPOINT, document.getElementById('endpoint').value.trim()));
+
+    renderHistory();
+  });
+
+  // ── Helpers ──────────────────────────────────
+  function esc(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function toast(msg, ms = 3500) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', ms);
+  }
+
+  function setStatus(msg, spin = true) {
+    document.getElementById('statusText').textContent  = msg;
+    document.getElementById('statusBar').style.display = 'flex';
+    document.querySelector('#statusBar .spinner').style.display = spin ? 'block' : 'none';
+  }
+
+  function hideStatus() {
+    document.getElementById('statusBar').style.display = 'none';
+  }
+
+  function toggleCustomModel(sel) {
+    const c = document.getElementById('customModel');
+    c.style.display = sel.value === 'custom' ? 'inline-block' : 'none';
+    if (sel.value === 'custom') c.focus();
+  }
+
+  function getModel() {
+    const v = document.getElementById('model').value;
+    if (v === 'custom') return document.getElementById('customModel').value.trim() || 'vertex_ai/imagen-3.0-generate-002';
+    return v;
+  }
+
+  function relTime(ts) {
+    const d = Date.now() - ts;
+    if (d < 60000)    return 'baru saja';
+    if (d < 3600000)  return Math.floor(d/60000)  + 'm lalu';
+    if (d < 86400000) return Math.floor(d/3600000) + 'j lalu';
+    return new Date(ts).toLocaleDateString('id-ID');
+  }
+
+  // ── GENERATE ─────────────────────────────────
+  async function generateImage() {
+    const apiKey   = document.getElementById('apiKey').value.trim();
+    const HOST     = document.getElementById('endpoint').value.trim().replace(/\/$/, '');
+    const model    = getModel();
+    const prompt   = document.getElementById('prompt').value.trim();
+    const negPr    = document.getElementById('negPrompt').value.trim();
+    const size     = document.getElementById('imgSize').value;
+    const n        = parseInt(document.getElementById('imgCount').value);
+
+    if (!HOST)   { toast('⚠ Isi BASE URL dulu'); return; }
+    if (!apiKey) { toast('⚠ Isi API KEY dulu');  return; }
+    if (!prompt) { toast('⚠ Prompt kosong');      return; }
+
+    const btn = document.getElementById('genBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ GENERATING...';
+    document.getElementById('imageGrid').style.display = 'none';
+    document.getElementById('imgGridInner').innerHTML  = '';
+    setStatus(`✦ Generating ${n} image${n>1?'s':''} dengan ${model.split('/').pop()}...`);
+
+    const payload = { model, prompt, n, size };
+    if (negPr) payload.negative_prompt = negPr;
+
+    try {
+      const res  = await fetch(`${HOST}/v1/images/generations`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type':  'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error?.message || JSON.stringify(data).slice(0,300));
+
+      const items = data?.data || [];
+      if (items.length === 0) throw new Error('Tidak ada gambar di response: ' + JSON.stringify(data).slice(0,300));
+
+      // Convert semua ke data URL
+      const images = items.map((item, i) => {
+        if (item.b64_json) return `data:image/png;base64,${item.b64_json}`;
+        if (item.url)      return item.url;
+        return null;
+      }).filter(Boolean);
+
+      if (images.length === 0) throw new Error('Format gambar tidak dikenali: ' + JSON.stringify(items[0]).slice(0,200));
+
+      showImages(images, model, prompt);
+      saveHistory({ prompt, negPr, model, size, images, ts: Date.now() });
+      hideStatus();
+      toast(`✔ ${images.length} gambar berhasil di-generate!`);
+
+    } catch (err) {
+      setStatus('❌ ' + err.message.slice(0, 300), false);
+    }
+
+    btn.disabled = false;
+    btn.textContent = '✦ GENERATE IMAGE';
+  }
+
+  // ── SHOW IMAGES ──────────────────────────────
+  function showImages(images, model, prompt) {
+    const grid    = document.getElementById('imageGrid');
+    const inner   = document.getElementById('imgGridInner');
+    const label   = document.getElementById('gridLabel');
+    const meta    = document.getElementById('gridMeta');
+
+    grid.style.display = 'block';
+    label.textContent  = `// OUTPUT — ${model.split('/').pop()}`;
+    meta.textContent   = `${images.length} gambar · ${prompt.slice(0,40)}${prompt.length>40?'…':''}`;
+
+    inner.innerHTML = images.map((src, i) => `
+      <div class="img-cell" onclick="openLightbox('${esc(src)}')">
+        <img src="${esc(src)}" alt="Generated image ${i+1}" loading="lazy"/>
+        <div class="img-overlay">
+          <a class="dl-img-btn" href="${esc(src)}" download="cyberimage_${i+1}.png" onclick="event.stopPropagation()">⬇</a>
+        </div>
+      </div>`).join('');
+  }
+
+  // ── LIGHTBOX ─────────────────────────────────
+  function openLightbox(src) {
+    document.getElementById('lightboxImg').src = src;
+    document.getElementById('lbDl').href       = src;
+    document.getElementById('lightbox').classList.add('open');
+  }
+
+  function closeLightbox(e) {
+    if (e && e.target !== document.getElementById('lightbox') && !e.target.classList.contains('lb-close')) return;
+    document.getElementById('lightbox').classList.remove('open');
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.getElementById('lightbox').classList.remove('open');
+  });
+
+  // ── HISTORY ──────────────────────────────────
+  function saveHistory(entry) {
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(LS_HISTORY) || '[]'); } catch {}
+    hist.unshift(entry);
+    // Keep max 30 entries, tapi limit ukuran total ~4MB
+    while (hist.length > 30) hist.pop();
+    try {
+      localStorage.setItem(LS_HISTORY, JSON.stringify(hist));
+    } catch (e) {
+      // localStorage penuh — hapus yang paling lama
+      hist.pop();
+      try { localStorage.setItem(LS_HISTORY, JSON.stringify(hist)); } catch {}
+    }
+    renderHistory();
+  }
+
+  function deleteHistory(idx) {
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(LS_HISTORY) || '[]'); } catch {}
+    hist.splice(idx, 1);
+    localStorage.setItem(LS_HISTORY, JSON.stringify(hist));
+    renderHistory();
+  }
+
+  function clearHistory() {
+    if (!confirm('Hapus semua riwayat?')) return;
+    localStorage.removeItem(LS_HISTORY);
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const wrap = document.getElementById('histWrap');
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(LS_HISTORY) || '[]'); } catch {}
+    if (hist.length === 0) { wrap.innerHTML = ''; return; }
+
+    wrap.innerHTML = `
+      <div class="hist-row">
+        <span class="hist-title">RIWAYAT (${hist.length})</span>
+        <button onclick="clearHistory()" style="font-family:var(--mono);font-size:10px;color:var(--accent2);background:transparent;border:1px solid #3a0010;padding:3px 10px;border-radius:2px;cursor:pointer">🗑 HAPUS SEMUA</button>
+      </div>` +
+      hist.map((h, i) => `
+        <div class="hist-grid-wrap">
+          <div class="hist-grid-head">
+            <span class="h-prompt" title="${esc(h.prompt)}">${esc(h.prompt.slice(0,60))}${h.prompt.length>60?'…':''}</span>
+            <span style="flex-shrink:0;color:var(--muted)">${h.model.split('/').pop()} · ${h.images.length}img · ${relTime(h.ts)}</span>
+            <button onclick="deleteHistory(${i})" style="font-family:var(--mono);font-size:10px;color:var(--accent2);background:transparent;border:1px solid #3a0010;padding:2px 8px;border-radius:2px;cursor:pointer;flex-shrink:0">✕</button>
+          </div>
+          <div class="hist-mini-grid">
+            ${h.images.map((src, j) => `
+              <img src="${esc(src)}" alt="img" loading="lazy"
+                onclick="openLightbox('${esc(src)}')"
+                title="Click untuk preview · Klik kanan → Simpan gambar"/>`).join('')}
+          </div>
+        </div>`).join('');
+  }
+</script>
+</body>
+</html>
