@@ -347,11 +347,15 @@
     <div class="card-title">PENGATURAN MODEL</div>
     <div class="row">
       <span class="lbl">MODEL:</span>
-      <select id="model">
+      <select id="model" onchange="toggleCustomModel(this)">
         <option value="vertex_ai/veo-3.1-fast-generate-001" selected>veo-3.1-fast</option>
+        <option value="vertex_ai/veo-3.1-generate-001">veo-3.1</option>
         <option value="vertex_ai/veo-3.0-generate-001">veo-3.0</option>
         <option value="vertex_ai/veo-2.0-generate-001">veo-2.0</option>
+        <option value="gemini/veo-3.1-generate-preview">gemini/veo-3.1-preview</option>
+        <option value="custom">[ custom... ]</option>
       </select>
+      <input type="text" id="customModel" placeholder="contoh: vertex_ai/veo-..." style="display:none;min-width:200px;flex:1"/>
       <span class="lbl">DURASI:</span>
       <select id="duration">
         <option value="4" selected>4s</option>
@@ -407,10 +411,291 @@ Contoh: A cinematic drone shot of a futuristic cyberpunk city, neon lights, 4k">
   const LS_ENDPOINT = 'cveo_endpoint';
   const LS_HISTORY  = 'cveo_history';
 
-  // ── State ────────────────────────────────────
-  let polling    = false;
-  let cancelled  = false;
-  let pollTimer  = null;
+  let cancelled = false;
+  let pollTimer = null;
+
+  // ── Init ─────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', () => {
+    const k = localStorage.getItem(LS_KEY);
+    const e = localStorage.getItem(LS_ENDPOINT);
+    if (k) document.getElementById('apiKey').value   = k;
+    if (e) document.getElementById('endpoint').value = e;
+
+    document.getElementById('apiKey').addEventListener('input',   () => localStorage.setItem(LS_KEY,      document.getElementById('apiKey').value));
+    document.getElementById('endpoint').addEventListener('input', () => localStorage.setItem(LS_ENDPOINT, document.getElementById('endpoint').value.trim()));
+
+    renderHistory();
+  });
+
+  // ── Helpers ──────────────────────────────────
+  function esc(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function toast(msg, ms = 3500) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', ms);
+  }
+
+  function setStatus(msg, spin = true) {
+    document.getElementById('statusText').textContent      = msg;
+    document.getElementById('spinner').style.display       = spin ? 'block' : 'none';
+    document.getElementById('statusBar').style.display     = 'flex';
+  }
+
+  function hideStatus() {
+    document.getElementById('statusBar').style.display = 'none';
+  }
+
+  function relTime(ts) {
+    const d = Date.now() - ts;
+    if (d < 60000)    return 'baru saja';
+    if (d < 3600000)  return Math.floor(d/60000)  + 'm lalu';
+    if (d < 86400000) return Math.floor(d/3600000) + 'j lalu';
+    return new Date(ts).toLocaleDateString('id-ID');
+  }
+
+  function toggleCustomModel(sel) {
+    const custom = document.getElementById('customModel');
+    custom.style.display = sel.value === 'custom' ? 'inline-block' : 'none';
+    if (sel.value === 'custom') custom.focus();
+  }
+
+  function getModel() {
+    const sel = document.getElementById('model').value;
+    if (sel === 'custom') {
+      return document.getElementById('customModel').value.trim() || 'vertex_ai/veo-3.1-fast-generate-001';
+    }
+    return sel;
+  }
+
+  // ── GENERATE ─────────────────────────────────
+  async function startGenerate() {
+    const apiKey  = document.getElementById('apiKey').value.trim();
+    const HOST    = document.getElementById('endpoint').value.trim().replace(/\/$/, '');
+    const model   = getModel();
+    const prompt  = document.getElementById('prompt').value.trim();
+    const seconds = parseInt(document.getElementById('duration').value);
+    const size    = document.getElementById('size').value;
+
+    if (!HOST)   { toast('⚠ Isi BASE URL dulu'); return; }
+    if (!apiKey) { toast('⚠ Isi API KEY dulu');  return; }
+    if (!prompt) { toast('⚠ Prompt kosong');      return; }
+
+    cancelled = false;
+
+    const genBtn    = document.getElementById('genBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    genBtn.disabled = true;
+    genBtn.textContent = '⏳ GENERATING...';
+    cancelBtn.style.display = 'inline-block';
+
+    document.getElementById('resultArea').style.display = 'none';
+    document.getElementById('videoWrap').innerHTML = '';
+    document.getElementById('dlBtn').style.display = 'none';
+
+    const headers = {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type':  'application/json'
+    };
+
+    // ── STEP 1: POST /v1/videos ────────────────
+    setStatus('🚀 Starting generation...');
+
+    let videoId;
+    try {
+      const res  = await fetch(`${HOST}/v1/videos`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ model, prompt, seconds, size })
+      });
+      const data = await res.json();
+      if (!data.id) throw new Error('Gagal start: ' + JSON.stringify(data).slice(0, 300));
+      videoId = data.id;
+    } catch (err) {
+      setStatus('❌ ' + err.message.slice(0, 300), false);
+      resetBtn(); return;
+    }
+
+    setStatus(`⏳ Processing... (ID: ${videoId.slice(0,24)}...)`);
+
+    // ── STEP 2: POLLING ────────────────────────
+    const startTime  = Date.now();
+    const TIMEOUT_MS = 5 * 60 * 1000; // 5 menit
+
+    const poll = async () => {
+      if (cancelled) return;
+
+      if (Date.now() - startTime > TIMEOUT_MS) {
+        setStatus('❌ Timeout — lebih dari 5 menit', false);
+        resetBtn(); return;
+      }
+
+      let res, statusData;
+      try {
+        res        = await fetch(`${HOST}/v1/videos/${videoId}`, { headers: { 'Authorization': `Bearer ${apiKey}` } });
+        statusData = await res.json();
+      } catch (e) {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        setStatus(`⚠ Poll error: ${e.message} — retry (${elapsed}s)...`);
+        pollTimer = setTimeout(poll, 5000); return;
+      }
+
+      const status  = statusData?.status || '?';
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      setStatus(`⏳ Status: ${status} — ${elapsed}s berlalu...`);
+
+      if (status === 'completed') {
+        setStatus('✅ Selesai! Memuat video...', false);
+
+        // ── STEP 3: LOAD VIDEO ─────────────────
+        // Fetch sebagai blob karena <video src> tidak bisa kirim Auth header
+        const contentUrl = `${HOST}/v1/videos/${videoId}/content`;
+        try {
+          const cr = await fetch(contentUrl, { headers: { 'Authorization': `Bearer ${apiKey}` } });
+          if (cr.ok) {
+            const blob   = await cr.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            showVideo(blobUrl, false, model, prompt, seconds);
+          } else {
+            // Fallback: coba langsung set src (works kalau endpoint public)
+            showVideo(contentUrl, true, model, prompt, seconds);
+          }
+        } catch (e) {
+          showVideo(contentUrl, true, model, prompt, seconds);
+        }
+
+        resetBtn(); return;
+      }
+
+      if (status === 'failed') {
+        setStatus('❌ Gagal: ' + JSON.stringify(statusData).slice(0, 300), false);
+        showRaw(statusData);
+        resetBtn(); return;
+      }
+
+      // masih processing — poll lagi 5 detik
+      pollTimer = setTimeout(poll, 5000);
+    };
+
+    pollTimer = setTimeout(poll, 5000);
+  }
+
+  function showVideo(url, isDirectSrc, model, prompt, seconds) {
+    const resultArea = document.getElementById('resultArea');
+    const videoWrap  = document.getElementById('videoWrap');
+    const dlBtn      = document.getElementById('dlBtn');
+
+    resultArea.style.display = 'block';
+    document.getElementById('resultLabel').textContent = `// OUTPUT — ${model.split('/').pop()}`;
+
+    const video = document.createElement('video');
+    video.controls  = true;
+    video.autoplay  = true;
+    video.loop      = true;
+    video.style.cssText = 'width:100%;background:#000;max-height:480px;display:block';
+
+    const source = document.createElement('source');
+    source.src  = url;
+    source.type = 'video/mp4';
+    video.appendChild(source);
+
+    const fallback = document.createElement('p');
+    fallback.style.cssText = 'padding:14px;font-family:var(--mono);font-size:11px;color:var(--accent)';
+    fallback.innerHTML = `Browser tidak bisa putar. <a href="${esc(url)}" target="_blank" style="color:var(--accent)">Buka di tab baru ↗</a>`;
+    video.appendChild(fallback);
+
+    videoWrap.innerHTML = '';
+    videoWrap.appendChild(video);
+
+    dlBtn.href         = url;
+    dlBtn.style.display = '';
+    hideStatus();
+    toast('✔ Video berhasil di-generate!');
+
+    // Simpan history hanya kalau bukan blob (blob tidak persistent)
+    if (!url.startsWith('blob:')) {
+      saveHistory({ prompt, model, videoUrl: url, seconds, ts: Date.now() });
+    } else {
+      toast('⚠ Video adalah blob — segera download sebelum tutup halaman!', 5000);
+    }
+  }
+
+  function cancelGenerate() {
+    cancelled = true;
+    if (pollTimer) clearTimeout(pollTimer);
+    setStatus('⚠ Dibatalkan oleh user', false);
+    resetBtn();
+  }
+
+  function resetBtn() {
+    const genBtn    = document.getElementById('genBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    genBtn.disabled    = false;
+    genBtn.textContent = '⬡ GENERATE VIDEO';
+    cancelBtn.style.display = 'none';
+  }
+
+  function showRaw(data) {
+    const resultArea = document.getElementById('resultArea');
+    resultArea.style.display = 'block';
+    document.getElementById('resultLabel').textContent = '// RAW RESPONSE';
+    document.getElementById('videoWrap').innerHTML =
+      `<div class="raw-out">${esc(JSON.stringify(data, null, 2))}</div>`;
+  }
+
+  // ── HISTORY ──────────────────────────────────
+  function saveHistory(entry) {
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(LS_HISTORY) || '[]'); } catch {}
+    hist.unshift(entry);
+    localStorage.setItem(LS_HISTORY, JSON.stringify(hist.slice(0, 20)));
+    renderHistory();
+  }
+
+  function deleteHistory(idx) {
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(LS_HISTORY) || '[]'); } catch {}
+    hist.splice(idx, 1);
+    localStorage.setItem(LS_HISTORY, JSON.stringify(hist));
+    renderHistory();
+  }
+
+  function clearHistory() {
+    if (!confirm('Hapus semua riwayat?')) return;
+    localStorage.removeItem(LS_HISTORY);
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const wrap = document.getElementById('historyWrap');
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(LS_HISTORY) || '[]'); } catch {}
+    if (hist.length === 0) { wrap.innerHTML = ''; return; }
+
+    wrap.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span class="hist-title">RIWAYAT (${hist.length})</span>
+        <button onclick="clearHistory()" style="font-family:var(--mono);font-size:10px;color:var(--accent2);background:transparent;border:1px solid #3a0010;padding:3px 10px;border-radius:2px;cursor:pointer">🗑 HAPUS SEMUA</button>
+      </div>` +
+      hist.map((h, i) => `
+        <div class="hist-item">
+          <div class="hist-item-head">
+            <span class="prompt-preview" title="${esc(h.prompt)}">${esc(h.prompt.slice(0,60))}${h.prompt.length>60?'…':''}</span>
+            <div class="hist-item-actions">
+              <span style="color:var(--muted)">${h.model.split('/').pop()} · ${h.seconds}s · ${relTime(h.ts)}</span>
+              <a href="${esc(h.videoUrl)}" download="veo_${i}.mp4" class="dl-btn" style="display:inline-block">⬇</a>
+              <button onclick="deleteHistory(${i})" class="dl-btn" style="display:inline-block;color:var(--accent2);border-color:#3a0010;cursor:pointer">✕</button>
+            </div>
+          </div>
+          <video controls style="width:100%;max-height:220px;background:#000;display:block">
+            <source src="${esc(h.videoUrl)}" type="video/mp4">
+          </video>
+        </div>`).join('');
+  }
 
   // ── Init ─────────────────────────────────────
   window.addEventListener('DOMContentLoaded', () => {
